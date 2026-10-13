@@ -240,10 +240,13 @@ function showFirebaseError(msg){
   bar.style.display='block';
 }
 async function loadState(){
+  console.log('LS-1: start');
   var fromFb=false;
   try{
+    console.log('LS-2: reading firebase');
     var snap=await db.ref('state').once('value');
     var fbData=snap.val();
+    console.log('LS-3: firebase returned, hasData='+!!fbData);
     if(fbData){
       state=fbData;
       fromFb=true;
@@ -255,10 +258,12 @@ async function loadState(){
       firebaseOk=true;
     }
   }catch(e){
+    console.log('LS-ERR: '+((e&&e.message)||e));
     firebaseOk=false;
     state=lsGet(LS_STATE)||defaultState();
     showFirebaseError('Read failed — '+((e&&e.message)||'permission denied'));
   }
+  console.log('LS-4: state loaded, stations='+((state&&state.stations&&state.stations.length)||'NONE'));
   if(!state.settings) state.settings={adminPin:'1234',khataNeedsApproval:true};
   if(!state.khataRequests) state.khataRequests=[];
   state.stations.forEach(function(st){
@@ -278,9 +283,12 @@ async function loadState(){
   if(!state.settings.ownerPassword) state.settings.ownerPassword='owner123';
   if(!state.register) state.register={current:null,history:[]};
   if(!state.customerTabs) state.customerTabs=[];
+  console.log('LS-5: publishing');
   publishStations();
   publishSettings();
+  console.log('LS-6: loading bookings');
   await loadBookings();
+  console.log('LS-7: bookings loaded, count='+bookings.length);
   bookings.forEach(function(b){
     if(b.notifRead===undefined) b.notifRead=true;
     if(b.consumed===undefined) b.consumed=false;
@@ -289,7 +297,9 @@ async function loadState(){
   saveBookings();
   knownBookingIds=new Set(bookings.map(function(b){return b.id;}));
   startNotifPolling();
+  console.log('LS-8: calling render');
   render();
+  console.log('LS-9: render done');
 }
 function saveState(){
   lsSet(LS_STATE,state);
@@ -1710,7 +1720,9 @@ function showModal(title,bodyHtml,onSave,saveLabel){
 }
 function closeModal(){ var ov=document.getElementById('cpOverlay'); if(ov) ov.remove(); }
 
-loadState();
+loadState().catch(function(err){
+  document.getElementById('cpBody').innerHTML='<div style="padding:20px;color:red;font-weight:bold;font-size:14px;">ERROR in loadState: '+(err&&err.message||err)+'<br><br>Stack: '+(err&&err.stack||'N/A')+'</div>';
+});
 })();
 
 </script>
