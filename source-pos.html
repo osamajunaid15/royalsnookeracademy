@@ -1,0 +1,2432 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Royal Snooker Academy — POS</title>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+.cp-app{--ink:#12151C;--muted:#6B7280;--muted-2:#9AA1AC;--border:#E7E9F0;--bg:#F6F7FB;--card:#FFFFFF;
+--ok-bg:#E6F7ED;--ok-text:#159A55;--warn-bg:#FEF2DE;--warn-text:#B4740A;--danger-bg:#FCE9E9;--danger-text:#D8383D;
+--brass:#DD9A1F;--brass-dark:#B4780F;--felt:#12151C;--danger:#D8383D;--ok:#159A55;
+font-family:'Inter',sans-serif;background:var(--bg);color:var(--ink);border-radius:16px;overflow:hidden;border:1px solid var(--border);position:relative;}
+.cp-app *{box-sizing:border-box;}
+.cp-bg-art{display:none;}
+.cp-head,.cp-tabs,.cp-body{position:relative;z-index:1;}
+.cp-head{background:var(--card);color:var(--ink);padding:16px 18px;display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;border-bottom:1px solid var(--border);}
+.cp-brand{font-family:'Inter',sans-serif;font-size:17px;font-weight:800;letter-spacing:-.2px;line-height:1.2;display:flex;align-items:center;gap:8px;}
+.cp-brand::before{content:'';display:inline-block;width:9px;height:9px;border-radius:50%;background:var(--ok);}
+.cp-brand span{color:var(--muted);font-weight:700;}
+.cp-clock{font-family:'Inter',sans-serif;font-variant-numeric:tabular-nums;font-size:13px;font-weight:700;color:var(--ink);background:var(--bg);border:1px solid var(--border);padding:6px 10px;border-radius:8px;}
+.cp-role-btn{background:var(--card);color:var(--ink);border:1px solid var(--border);padding:6px 12px;border-radius:99px;font-size:11px;font-weight:700;cursor:pointer;}
+.cp-bell{position:relative;background:var(--card);border:1px solid var(--border);color:var(--ink);border-radius:99px;width:32px;height:32px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:14px;padding:0;}
+.cp-badge{position:absolute;top:-4px;right:-4px;background:var(--danger);color:#fff;font-size:10px;min-width:16px;height:16px;border-radius:99px;display:none;align-items:center;justify-content:center;padding:0 3px;font-weight:700;line-height:1;}
+.cp-toasts{position:absolute;top:64px;right:10px;z-index:70;display:flex;flex-direction:column;gap:8px;max-width:230px;}
+.cp-toast{background:var(--ink);color:#fff;padding:10px 13px;border-radius:10px;font-size:12px;font-weight:500;box-shadow:0 10px 24px rgba(18,21,28,.25);opacity:1;transition:opacity .4s;}
+.cp-toast.hide{opacity:0;}
+.cp-notif-panel{position:absolute;top:60px;right:10px;background:var(--card);border:1px solid var(--border);border-radius:14px;box-shadow:0 14px 32px rgba(18,21,28,.14);width:250px;max-height:300px;overflow-y:auto;z-index:65;}
+.cp-notif-row{padding:11px 13px;border-bottom:1px solid var(--border);cursor:pointer;}
+.cp-notif-row.unread{background:#FFFBF0;}
+.cp-notif-row:hover{background:var(--bg);}
+.cp-tabs{display:flex;background:var(--card);overflow-x:auto;border-bottom:1px solid var(--border);padding:0 6px;}
+.cp-tab{padding:13px 14px;font-size:13px;font-weight:600;color:var(--muted);background:none;border:none;cursor:pointer;white-space:nowrap;border-bottom:2px solid transparent;}
+.cp-tab.active{color:var(--ink);border-bottom-color:var(--ink);font-weight:700;}
+.cp-body{padding:18px;min-height:320px;background:var(--bg);}
+.cp-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;gap:10px;flex-wrap:wrap;}
+.cp-h2{font-family:'Inter',sans-serif;font-size:19px;font-weight:800;margin:16px 0 12px;letter-spacing:-.3px;}
+.cp-row .cp-h2{margin:0;}
+.cp-btn{background:var(--ink);color:#fff;border:none;padding:10px 16px;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;}
+.cp-btn:active{transform:scale(.97);}
+.cp-btn.ghost{background:#fff;color:var(--ink);border:1px solid var(--border);}
+.cp-btn.danger{background:var(--danger);color:#fff;}
+.cp-btn.brass{background:var(--brass);color:#2A1D07;}
+.cp-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;}
+.cp-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:14px;box-shadow:0 1px 2px rgba(18,21,28,.04);}
+.cp-card.running{border-color:var(--warn-text);box-shadow:0 1px 2px rgba(18,21,28,.04),inset 0 0 0 1px rgba(180,116,10,.15);}
+.cp-tname{font-weight:700;font-size:14.5px;letter-spacing:-.1px;}
+.cp-cat{font-size:10.5px;color:var(--muted-2);text-transform:uppercase;letter-spacing:.5px;font-weight:600;margin-top:1px;}
+.cp-pill{display:inline-block;font-size:10.5px;font-weight:700;padding:3px 9px;border-radius:99px;margin-top:8px;letter-spacing:.2px;}
+.cp-pill.idle{background:var(--ok-bg);color:var(--ok-text);}
+.cp-pill.on{background:var(--warn-bg);color:var(--warn-text);}
+.cp-pill.paused{background:#F0F1F4;color:var(--muted);}
+.cp-unit-toggle{display:flex;background:var(--bg);border:1px solid var(--border);border-radius:99px;padding:2px;font-size:11px;}
+.cp-unit-toggle button{border:none;background:none;padding:6px 11px;border-radius:99px;cursor:pointer;color:var(--muted);font-weight:600;}
+.cp-unit-toggle button.active{background:var(--ink);color:#fff;}
+.cp-timer{font-family:'Inter',sans-serif;font-variant-numeric:tabular-nums;font-size:24px;font-weight:800;margin:10px 0 3px;color:var(--ink);letter-spacing:-.5px;}
+.cp-sub{font-size:12px;color:var(--muted);line-height:1.5;}
+.cp-cardbtns{display:flex;flex-wrap:wrap;gap:7px;margin-top:12px;}
+.cp-cardbtns .cp-btn{flex:1 1 44%;font-size:12px;padding:9px 6px;}
+.cp-empty{text-align:center;padding:34px 10px;color:var(--muted-2);font-size:13px;}
+.cp-avail-banner{background:var(--ink);color:#fff;border-radius:14px;padding:14px 16px;margin-bottom:10px;font-size:13px;font-weight:500;}
+.cp-avail-banner b{font-family:'Inter',sans-serif;font-variant-numeric:tabular-nums;font-size:20px;font-weight:800;color:#fff;margin-right:6px;}
+.cp-avail-strip{display:flex;gap:8px;overflow-x:auto;margin-bottom:16px;padding-bottom:2px;}
+.cp-avail-chip{display:flex;align-items:center;gap:6px;font-size:12px;font-weight:600;padding:6px 11px;border-radius:99px;white-space:nowrap;border:1px solid var(--border);background:#fff;flex-shrink:0;}
+.cp-avail-chip .dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;}
+.cp-avail-chip.free .dot{background:var(--ok-text);}
+.cp-avail-chip.free{color:var(--ok-text);border-color:#CDEEDA;background:var(--ok-bg);}
+.cp-avail-chip.busy .dot{background:var(--warn-text);}
+.cp-avail-chip.busy{color:var(--warn-text);border-color:#F6E1B8;background:var(--warn-bg);}
+.cp-items{background:var(--bg);border-radius:10px;padding:8px 11px;margin-top:8px;}
+.cp-item-row{display:flex;justify-content:space-between;font-size:12px;color:var(--muted);padding:4px 0;font-weight:500;}
+.cp-item-row:not(:last-child){border-bottom:1px dashed var(--border);}
+.cp-field{margin-bottom:12px;}
+.cp-field label{display:block;font-size:12px;color:var(--muted);margin-bottom:5px;font-weight:600;}
+.cp-field input,.cp-field select{width:100%;padding:10px 11px;border:1px solid var(--border);border-radius:9px;font-size:14px;background:#fff;color:var(--ink);}
+.cp-overlay{position:fixed;inset:0;background:rgba(18,21,28,.45);display:flex;align-items:flex-end;justify-content:center;z-index:50;}
+.cp-modal{background:#fff;border-radius:18px 18px 0 0;padding:20px;width:100%;max-width:420px;max-height:82vh;overflow-y:auto;}
+.cp-modal-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;}
+.cp-modal-head h3{font-family:'Inter',sans-serif;margin:0;font-size:17px;font-weight:800;letter-spacing:-.2px;}
+.cp-x{background:var(--bg);border:none;font-size:16px;cursor:pointer;color:var(--muted);width:28px;height:28px;border-radius:8px;}
+.cp-list-item{display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid var(--border);}
+.cp-tag{font-size:11px;font-weight:700;background:var(--bg);padding:3px 9px;border-radius:7px;color:var(--muted);}
+.cp-metrics{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-bottom:16px;}
+.cp-metric{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:16px;box-shadow:0 1px 2px rgba(18,21,28,.04);}
+.cp-metric b{display:block;font-family:'Inter',sans-serif;font-variant-numeric:tabular-nums;font-size:26px;font-weight:800;color:var(--ink);letter-spacing:-.5px;line-height:1.15;}
+.cp-metric span{font-size:11.5px;color:var(--muted);font-weight:500;}
+.cp-cash-banner{display:flex;gap:10px;align-items:center;background:var(--card);border:1px solid var(--border);border-radius:14px;padding:14px 16px;margin-bottom:12px;flex-wrap:wrap;box-shadow:0 1px 2px rgba(18,21,28,.04);}
+.cp-cash-item{display:flex;align-items:center;gap:9px;flex:1 1 45%;}
+.cp-cash-icon{font-size:20px;}
+.cp-cash-label{font-size:10px;color:var(--muted-2);font-weight:700;letter-spacing:.4px;}
+.cp-cash-value{font-family:'Inter',sans-serif;font-variant-numeric:tabular-nums;font-size:17px;font-weight:800;color:var(--ink);}
+.cp-period-toggle{display:flex;background:var(--bg);border:1px solid var(--border);border-radius:99px;padding:2px;font-size:11px;margin-left:auto;}
+.cp-period-toggle button{border:none;background:none;padding:6px 11px;border-radius:99px;cursor:pointer;color:var(--muted);font-weight:600;}
+.cp-period-toggle button.active{background:var(--ink);color:#fff;}
+.cp-cat-pills{display:flex;gap:7px;overflow-x:auto;margin-bottom:16px;padding-bottom:2px;}
+.cp-cat-pills button{border:1px solid var(--border);background:#fff;color:var(--muted);padding:8px 14px;border-radius:99px;font-size:12px;font-weight:700;white-space:nowrap;cursor:pointer;flex-shrink:0;}
+.cp-cat-pills button.active{background:var(--ink);color:#fff;border-color:var(--ink);}
+.cp-bill{background:var(--ink);color:#fff;border-radius:14px;padding:18px;font-family:'Inter',sans-serif;font-size:13px;}
+.cp-bill .line{display:flex;justify-content:space-between;padding:4px 0;font-variant-numeric:tabular-nums;}
+.cp-bill hr{border:none;border-top:1px dashed rgba(255,255,255,.25);margin:9px 0;}
+.cp-qty{display:flex;align-items:center;gap:8px;}
+.cp-qty button{width:28px;height:28px;border-radius:8px;border:1px solid var(--border);background:#fff;cursor:pointer;font-weight:700;}
+.cp-note{font-size:12px;color:var(--muted);text-align:center;padding:10px;}
+.cp-split{display:flex;gap:8px;}
+.cp-split .cp-field{flex:1;}
+/* Login screen */
+.cp-login-overlay{position:fixed;top:0;left:0;right:0;bottom:0;z-index:10000;background:#12151C;display:flex;align-items:center;justify-content:center;font-family:'Inter',sans-serif;}
+.cp-login-box{background:#fff;border-radius:18px;padding:36px 32px;width:340px;max-width:92vw;box-shadow:0 20px 60px rgba(0,0,0,.4);text-align:center;}
+.cp-login-box h2{margin:0 0 4px;font-size:20px;font-weight:800;color:#12151C;}
+.cp-login-box .cp-login-sub{color:#6B7280;font-size:12px;margin-bottom:22px;}
+.cp-login-box input{width:100%;padding:11px 14px;border:1px solid #E7E9F0;border-radius:10px;font-size:13px;font-family:'Inter',sans-serif;margin-bottom:10px;outline:none;background:#F6F7FB;}
+.cp-login-box input:focus{border-color:#12151C;background:#fff;}
+.cp-login-box button{width:100%;padding:12px;background:#12151C;color:#fff;border:none;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;margin-top:4px;}
+.cp-login-box button:active{transform:scale(.97);}
+.cp-login-err{color:#D8383D;font-size:11px;font-weight:600;min-height:16px;margin-bottom:6px;}
+.cp-view-toggle{position:fixed;bottom:14px;right:14px;z-index:40;background:var(--ink);color:#fff;border:none;padding:8px 14px;border-radius:99px;font-size:11px;font-weight:700;cursor:pointer;box-shadow:0 4px 12px rgba(0,0,0,.25);display:none;}
+@media(max-width:768px){
+  .cp-app:not(.desktop-mode) .cp-grid{grid-template-columns:1fr !important;}
+  .cp-app:not(.desktop-mode) .cp-metrics{grid-template-columns:repeat(2,1fr);}
+  .cp-app:not(.desktop-mode) .cp-head{padding:10px 12px;flex-wrap:wrap;}
+  .cp-app:not(.desktop-mode) .cp-brand{font-size:14px;}
+  .cp-app:not(.desktop-mode) .cp-body{padding:12px;}
+  .cp-app:not(.desktop-mode) .cp-tab{padding:10px 10px;font-size:11.5px;}
+  .cp-app:not(.desktop-mode) .cp-h2{font-size:16px;}
+  .cp-app:not(.desktop-mode) .cp-modal{max-width:100%;border-radius:16px 16px 0 0;}
+  .cp-app:not(.desktop-mode) .cp-timer{font-size:20px;}
+  .cp-app:not(.desktop-mode) .cp-metric b{font-size:20px;}
+  .cp-view-toggle{display:block;}
+}
+
+</style>
+</head>
+<body>
+<div class="cp-login-overlay" id="cpLogin">
+  <div class="cp-login-box">
+    <h2>Royal Snooker Academy</h2>
+    <div class="cp-login-sub">Staff / Admin Login</div>
+    <input type="email" id="loginEmail" placeholder="Email" autocomplete="username">
+    <input type="password" id="loginPass" placeholder="Password" autocomplete="current-password">
+    <div class="cp-login-err" id="loginErr"></div>
+    <button id="loginBtn">Login</button>
+  </div>
+</div>
+<div class="cp-app" id="cpApp" style="display:none;">
+  <div class="cp-bg-art" aria-hidden="true">
+    <svg viewBox="0 0 400 220" xmlns="http://www.w3.org/2000/svg">
+      <rect x="10" y="10" width="380" height="200" rx="14" fill="#0A2C21"/>
+      <rect x="26" y="26" width="348" height="168" rx="6" fill="none" stroke="#F4EFE3" stroke-width="2"/>
+      <circle cx="30" cy="30" r="12" fill="#0A2C21" stroke="#1C1712" stroke-width="3"/>
+      <circle cx="370" cy="30" r="12" fill="#0A2C21" stroke="#1C1712" stroke-width="3"/>
+      <circle cx="30" cy="190" r="12" fill="#0A2C21" stroke="#1C1712" stroke-width="3"/>
+      <circle cx="370" cy="190" r="12" fill="#0A2C21" stroke="#1C1712" stroke-width="3"/>
+      <circle cx="200" cy="14" r="10" fill="#0A2C21" stroke="#1C1712" stroke-width="3"/>
+      <circle cx="200" cy="206" r="10" fill="#0A2C21" stroke="#1C1712" stroke-width="3"/>
+      <circle cx="110" cy="90" r="9" fill="#F4EFE3"/>
+      <circle cx="150" cy="130" r="9" fill="#B8892B"/>
+      <circle cx="230" cy="75" r="9" fill="#A83232"/>
+      <circle cx="260" cy="140" r="9" fill="#1C1712"/>
+      <circle cx="190" cy="105" r="9" fill="#F4EFE3"/>
+      <line x1="60" y1="170" x2="180" y2="115" stroke="#7A4E2B" stroke-width="4" stroke-linecap="round"/>
+    </svg>
+  </div>
+  <div class="cp-head">
+    <div class="cp-brand">Royal <span>Snooker Academy</span></div>
+    <div style="display:flex;align-items:center;gap:10px;">
+      <div class="cp-clock" id="cpClock">--:--:--</div>
+      <button class="cp-bell" id="cpBell">&#128276;<span class="cp-badge" id="cpBadge"></span></button>
+      <button class="cp-role-btn" id="cpRoleBtn"></button>
+      <button class="cp-role-btn" id="cpLogout" style="font-size:10px;padding:5px 10px;">Logout</button>
+    </div>
+  </div>
+  <div class="cp-toasts" id="cpToasts"></div>
+  <div class="cp-tabs" id="cpTabs"></div>
+  <div class="cp-body" id="cpBody"></div>
+</div>
+<button class="cp-view-toggle" id="cpViewToggle">Desktop view</button>
+
+<script>
+(function(){
+/* --- Remote kill-switch --- */
+(function(){
+  var cfgUrl='config.json?_='+Date.now();
+  try{
+    var x=new XMLHttpRequest();
+    x.open('GET',cfgUrl,false);
+    x.send();
+    if(x.status===200){
+      var c=JSON.parse(x.responseText);
+      if(c.active===false||(c.expiry&&new Date(c.expiry)<new Date())){
+        document.getElementById('cpApp').innerHTML='<div style="display:flex;align-items:center;justify-content:center;min-height:400px;padding:40px;text-align:center;"><div><div style="font-size:48px;margin-bottom:16px;">&#128274;</div><h2 style="margin:0 0 8px;font-family:Inter,sans-serif;">Demo Period Ended</h2><p style="color:#6B7280;font-size:14px;max-width:300px;margin:0 auto;">'+(c.message||'This demo has expired. Contact the developer for a full license.')+'</p></div></div>';
+        return;
+      }
+    }
+  }catch(e){}
+})();
+/* --- Firebase init --- */
+firebase.initializeApp({
+  apiKey:"AIzaSyAxkJ3bJKgswpz8ggmfa7Oetn99mSCXrT0",
+  authDomain:"royal-snooker-academy.firebaseapp.com",
+  databaseURL:"https://royal-snooker-academy-default-rtdb.firebaseio.com",
+  projectId:"royal-snooker-academy",
+  storageBucket:"royal-snooker-academy.firebasestorage.app",
+  messagingSenderId:"765677194573",
+  appId:"1:765677194573:web:55c739eec3daf785803b04"
+});
+var db=firebase.database();
+var STORE_KEY='club-state-v1';
+var BOOKING_KEY='sns-bookings-v1';
+function lsKey(base){ return base+'-'+currentBranch; }
+var LS_STATE='rsa-state';
+var LS_BOOKINGS='rsa-bookings';
+var firebaseOk=false;
+var state=null;
+var bookings=[];
+var role='staff';
+var currentBranch='nazimabad'; /* default branch */
+var BRANCHES=[{id:'gulshan',name:'Gulshan'},{id:'nazimabad',name:'Nazimabad'}];
+var SUPER_ADMIN={email:'superadmin@royalsnooker.com',pass:'password'};
+var BRANCH_CREDS={
+  gulshan:{adminEmail:'admingulshan@royalsnooker.com',adminPass:'admin@1234',staffEmail:'staffgulshan@royalsnooker.com',staffPass:'staff@123'},
+  nazimabad:{adminEmail:'admin@royalsnooker.com',adminPass:'admin@1234',staffEmail:'staff@royalsnooker.com',staffPass:'staff@123'}
+};
+function branchRef(path){ return 'branches/'+currentBranch+'/'+path; }
+var rateUnit='min';
+var timerHandle=null;
+var VALID_TABS=['tables','bookings','khata','canteen','finance','history','income','customertabs','reports','admin'];
+var activeTab=(function(){
+  var h=(location.hash||'').replace('#','');
+  return VALID_TABS.indexOf(h)>=0 ? h : 'tables';
+})();
+var knownBookingIds=new Set();
+var notifPollHandle=null;
+var categoryFilter='all';
+var cashPeriod='today';
+var showAllCategoryMetrics=false;
+
+function mkStation(id,name,category,mode,regHour,peakHour,regMin,peakMin){
+  if(!regHour && regMin) regHour=Math.round(regMin*60*100)/100;
+  if(!peakHour && peakMin) peakHour=Math.round(peakMin*60*100)/100;
+  if(!regMin && regHour) regMin=Math.round((regHour/60)*100)/100;
+  if(!peakMin && peakHour) peakMin=Math.round((peakHour/60)*100)/100;
+  return {id:id,name:name,category:category,mode:mode,
+    regularRateHour:regHour,peakRateHour:peakHour,regularRateMin:regMin,peakRateMin:peakMin,
+    peakStart:'18:00',peakEnd:'23:00',status:'idle',startTime:null,customer:'',orders:[],
+    sessionMode:null,gameLog:[],pausedMs:0,pauseStart:null,
+    bookingId:null,bookingAdvance:0,bookingCustomerName:'',bookingCustomerPhone:''};
+}
+function defaultState(){
+  return {
+    stations:[
+      mkStation('t1','Table 1','Snooker','hour',400,600,0,0),
+      mkStation('t2','Table 2','Snooker','both',400,600,7,10),
+      mkStation('t3','8-Ball 1','8-Ball Pool','hour',300,450,0,0),
+      mkStation('t4','PS5 Bay 1','PS5','min',0,0,5,7),
+      mkStation('t5','PS5 Bay 2','PS5','min',0,0,5,7)
+    ],
+    products:[
+      {id:'p1',name:'Chai',price:60,costPrice:30,stock:40},
+      {id:'p2',name:'Cold Drink',price:120,costPrice:80,stock:30},
+      {id:'p3',name:'Chips',price:100,costPrice:60,stock:25},
+      {id:'p4',name:'Water Bottle',price:50,costPrice:25,stock:50}
+    ],
+    canteenSales:[],
+    stockAdjustments:[],
+    khata:[],
+    khataRequests:[],
+    sales:[],
+    invoiceCounter:1,
+    settings:{adminPin:'1234',khataNeedsApproval:true,minBookingAdvance:500,ownerPassword:'owner123',
+      staffEmail:'staff@royalsnooker.com',staffPass:'staff@123',
+      adminEmail:'admin@royalsnooker.com',adminPass:'admin@1234'},
+    register:{current:null,history:[]},
+    customerTabs:[]
+  };
+}
+
+function lsGet(key){try{var d=localStorage.getItem(key);return d?JSON.parse(d):null;}catch(e){return null;}}
+function lsSet(key,val){try{localStorage.setItem(key,JSON.stringify(val));}catch(e){}}
+/* Firebase converts arrays to objects {0:…,1:…} and empty arrays to null.
+   fbArr() converts any of these back to a proper JS array. */
+function fbArr(v){
+  if(Array.isArray(v)) return v;
+  if(v && typeof v==='object'){
+    var keys=Object.keys(v);
+    var allNumeric=keys.length>0 && keys.every(function(k){return /^\d+$/.test(k);});
+    if(allNumeric){
+      var arr=[];
+      keys.sort(function(a,b){return (+a)-(+b);}).forEach(function(k){if(v[k]!=null)arr.push(v[k]);});
+      return arr;
+    }
+  }
+  return null;
+}
+function ensureStateArrays(){
+  if(!state.settings) state.settings={adminPin:'1234',khataNeedsApproval:true};
+  state.sales=fbArr(state.sales)||[];
+  state.products=fbArr(state.products)||[
+    {id:'p1',name:'Chai',price:60,costPrice:30,stock:40},
+    {id:'p2',name:'Cold Drink',price:120,costPrice:80,stock:30},
+    {id:'p3',name:'Chips',price:100,costPrice:60,stock:25},
+    {id:'p4',name:'Water Bottle',price:50,costPrice:25,stock:50}
+  ];
+  state.products.forEach(function(p){ if(p.costPrice===undefined) p.costPrice=0; });
+  state.canteenSales=fbArr(state.canteenSales)||[];
+  state.stockAdjustments=fbArr(state.stockAdjustments)||[];
+  state.khata=fbArr(state.khata)||[];
+  state.khataRequests=fbArr(state.khataRequests)||[];
+  state.customerTabs=fbArr(state.customerTabs)||[];
+  var st2=fbArr(state.stations);
+  state.stations=st2&&st2.length?st2:defaultState().stations;
+  if(!state.invoiceCounter) state.invoiceCounter=1;
+  if(!state.register) state.register={current:null,history:[]};
+  if(state.register.history) state.register.history=fbArr(state.register.history)||[];
+  if(!state.settings.minBookingAdvance && state.settings.minBookingAdvance!==0) state.settings.minBookingAdvance=500;
+  if(!state.settings.ownerPassword) state.settings.ownerPassword='owner123';
+  if(state.settings.staffCanApproveBookings===undefined) state.settings.staffCanApproveBookings=false;
+  if(state.settings.staffCanWithdraw===undefined) state.settings.staffCanWithdraw=false;
+  if(!state.settings.clubOpenTime) state.settings.clubOpenTime='10:00';
+  if(!state.settings.clubCloseTime) state.settings.clubCloseTime='23:00';
+  if(state.settings.club24h===undefined) state.settings.club24h=false;
+  if(!state.settings.staffEmail) state.settings.staffEmail='staff@royalsnooker.com';
+  if(!state.settings.staffPass) state.settings.staffPass='staff@123';
+  if(!state.settings.adminEmail) state.settings.adminEmail='admin@royalsnooker.com';
+  if(!state.settings.adminPass) state.settings.adminPass='admin@1234';
+  state.stations.forEach(function(st){
+    st.orders=fbArr(st.orders)||[];
+    st.gameLog=fbArr(st.gameLog)||[];
+    if(st.pausedMs==null) st.pausedMs=0;
+    if(st.pauseStart===undefined) st.pauseStart=null;
+    if(st.bookingId===undefined) st.bookingId=null;
+    if(st.bookingAdvance==null) st.bookingAdvance=0;
+    if(st.bookingCustomerName===undefined) st.bookingCustomerName='';
+    if(st.bookingCustomerPhone===undefined) st.bookingCustomerPhone='';
+    st.gameLog.forEach(function(g){
+      if(g.customerTabId===undefined) g.customerTabId=null;
+      if(g.paidOffByTab===undefined) g.paidOffByTab=false;
+    });
+  });
+}
+function showFirebaseError(msg){
+  var bar=document.getElementById('fbErrBar');
+  if(!bar){
+    bar=document.createElement('div');
+    bar.id='fbErrBar';
+    bar.style.cssText='position:fixed;top:0;left:0;right:0;z-index:9999;background:#D8383D;color:#fff;padding:10px 14px;font-size:13px;font-weight:600;text-align:center;font-family:Inter,sans-serif;';
+    document.body.appendChild(bar);
+  }
+  bar.textContent='⚠ Firebase: '+msg+' — Data sirf local save ho raha hai. Firebase Console mein Rules check karein.';
+  bar.style.display='block';
+}
+async function loadState(){
+  var fromFb=false;
+  try{
+    var snap=await db.ref(branchRef('state')).once('value');
+    var fbData=snap.val();
+    if(fbData){
+      state=fbData;
+      fromFb=true;
+      firebaseOk=true;
+      lsSet(lsKey(LS_STATE),state);
+    } else {
+      /* Firebase connected but empty — try localStorage */
+      state=lsGet(lsKey(LS_STATE))||defaultState();
+      firebaseOk=true;
+    }
+  }catch(e){
+    firebaseOk=false;
+    state=lsGet(lsKey(LS_STATE))||defaultState();
+    showFirebaseError('Read failed — '+((e&&e.message)||'permission denied'));
+  }
+  ensureStateArrays();
+  publishStations();
+  publishSettings();
+  await loadBookings();
+  bookings.forEach(function(b){
+    if(b.notifRead===undefined) b.notifRead=true;
+    if(b.consumed===undefined) b.consumed=false;
+    if(b.advanceAmount===undefined) b.advanceAmount=0;
+  });
+  saveBookings();
+  knownBookingIds=new Set(bookings.map(function(b){return b.id;}));
+  startNotifPolling();
+  render();
+}
+function saveState(){
+  ensureStateArrays();
+  lsSet(lsKey(LS_STATE),state);
+  db.ref(branchRef('state')).set(state).then(function(){
+    firebaseOk=true;
+    var bar=document.getElementById('fbErrBar');
+    if(bar) bar.style.display='none';
+  }).catch(function(e){
+    firebaseOk=false;
+    showFirebaseError('Write failed — '+((e&&e.message)||'permission denied'));
+  });
+  publishStations();
+  publishSettings();
+}
+function publishSettings(){
+  db.ref(branchRef('settings-public')).set({
+    minBookingAdvance:state.settings.minBookingAdvance||0,
+    clubOpenTime:state.settings.clubOpenTime||'10:00',
+    clubCloseTime:state.settings.clubCloseTime||'23:00',
+    club24h:!!state.settings.club24h
+  }).catch(function(){});
+}
+function publishStations(){
+  try{
+    var pub=state.stations.map(function(s){return {id:s.id,name:s.name,category:s.category,status:s.status};});
+    db.ref(branchRef('stations-public')).set(pub).catch(function(){});
+  }catch(e){}
+}
+
+function fmtMoney(n){ return 'Rs. '+Math.round(n).toLocaleString(); }
+function fmtDur(sec){
+  sec=Math.max(0,Math.floor(sec));
+  var h=Math.floor(sec/3600),m=Math.floor((sec%3600)/60),s=sec%60;
+  return (h>0?String(h).padStart(2,'0')+':':'')+String(m).padStart(2,'0')+':'+String(s).padStart(2,'0');
+}
+function fmtTime12(d){
+  var h=d.getHours(), m=d.getMinutes();
+  var ap=h>=12?'PM':'AM';
+  var h12=h%12; if(h12===0) h12=12;
+  return (h12<10?'0'+h12:h12)+':'+(m<10?'0'+m:m)+' '+ap;
+}
+function isPeakAt(st,date){
+  var cur=date.getHours()*60+date.getMinutes();
+  var toMin=function(t){var p=t.split(':');return parseInt(p[0])*60+parseInt(p[1]);};
+  var s=toMin(st.peakStart), e=toMin(st.peakEnd);
+  if(s<=e) return cur>=s && cur<e;
+  return cur>=s || cur<e;
+}
+function isPeakNow(st){ return isPeakAt(st,new Date()); }
+function billingMode(st){ return st.mode==='both' ? (st.sessionMode||'hour') : st.mode; }
+function rateAt(st,date){
+  var bm=billingMode(st), peak=isPeakAt(st,date);
+  if(bm==='min') return peak?st.peakRateMin:st.regularRateMin;
+  return peak?st.peakRateHour:st.regularRateHour;
+}
+function currentRate(st){ return rateAt(st,new Date()); }
+function rateLabel(st){ return billingMode(st)==='min'?'/min':'/hr'; }
+function costForDuration(st,rate,durationSec){
+  var mins=durationSec/60;
+  return billingMode(st)==='hour' ? (rate/60)*mins : rate*mins;
+}
+function elapsedSec(st){
+  if(!st.startTime) return 0;
+  var now=Date.now();
+  var pausedTotalMs=(st.pausedMs||0)+(st.pauseStart?(now-st.pauseStart):0);
+  return Math.max(0,(now-st.startTime-pausedTotalMs)/1000);
+}
+function loggedSoFar(st){ return (st.gameLog||[]).reduce(function(a,g){return a+g.durationSec;},0); }
+function gameCost(st){
+  var logged=loggedSoFar(st);
+  var total=elapsedSec(st);
+  var openDur=Math.max(0,total-logged);
+  var loggedCost=(st.gameLog||[]).reduce(function(a,g){return a+costForDuration(st,rateAt(st,new Date(g.startedAt)),g.durationSec);},0);
+  var openCost=costForDuration(st,currentRate(st),openDur);
+  return loggedCost+openCost;
+}
+function canteenTotal(st){
+  var t=0;
+  st.orders.forEach(function(o){
+    if(o.custom){ t+=(o.price||0)*o.qty; return; }
+    var p=state.products.find(function(x){return x.id===o.pid;});
+    if(p) t+=p.price*o.qty;
+  });
+  return t;
+}
+
+function el(tag,cls,html){ var e=document.createElement(tag); if(cls)e.className=cls; if(html!==undefined)e.innerHTML=html; return e; }
+
+function renderRoleBtn(){
+  var b=document.getElementById('cpRoleBtn');
+  b.textContent = role==='admin' ? '\u2713 Admin mode' : 'Staff mode';
+  b.onclick=function(){
+    if(role==='admin'){ role='staff'; if(activeTab==='admin') activeTab='tables'; render(); return; }
+    var pin=prompt('Enter admin PIN to switch to admin mode:');
+    if(pin===null) return;
+    if(pin===state.settings.adminPin){ role='admin'; render(); }
+    else alert('Incorrect PIN.');
+  };
+}
+function showToast(msg){
+  var container=document.getElementById('cpToasts');
+  if(!container) return;
+  var t=el('div','cp-toast',msg);
+  container.appendChild(t);
+  setTimeout(function(){
+    t.classList.add('hide');
+    setTimeout(function(){ t.remove(); },400);
+  },5000);
+}
+function renderBell(){
+  var badge=document.getElementById('cpBadge');
+  if(!badge) return;
+  var unread=bookings.filter(function(b){return !b.notifRead;}).length;
+  if(unread>0){ badge.textContent=unread>9?'9+':unread; badge.style.display='flex'; }
+  else { badge.style.display='none'; }
+  var bellBtn=document.getElementById('cpBell');
+  if(bellBtn) bellBtn.onclick=toggleNotifPanel;
+}
+function toggleNotifPanel(){
+  var existing=document.getElementById('cpNotifPanel');
+  if(existing){ existing.remove(); return; }
+  var panel=el('div','cp-notif-panel'); panel.id='cpNotifPanel';
+  var sorted=bookings.slice().sort(function(a,b){return b.createdAt-a.createdAt;}).slice(0,12);
+  if(!sorted.length){ panel.appendChild(el('div','cp-empty','No notifications yet.')); }
+  sorted.forEach(function(b){
+    var row=el('div','cp-notif-row'+(b.notifRead?'':' unread'),
+      '<div class="cp-tname" style="font-size:13px;">'+b.name+'</div><div class="cp-sub">'+(b.category||'')+' · '+(b.date||'')+' '+(b.time||'')+'</div>');
+    row.onclick=function(){
+      b.notifRead=true;
+      saveBookings();
+      panel.remove();
+      goTab('bookings');
+    };
+    panel.appendChild(row);
+  });
+  document.getElementById('cpApp').appendChild(panel);
+}
+function startNotifPolling(){
+  db.ref(branchRef('bookings')).on('value',function(snap){
+    try{
+      var latest=snap.val()||[];
+      var newOnes=latest.filter(function(b){return !knownBookingIds.has(b.id);});
+      bookings=latest;
+      newOnes.forEach(function(b){
+        knownBookingIds.add(b.id);
+        showToast('New booking: '+b.name+' — '+(b.category||'')+' '+(b.date||'')+' '+(b.time||''));
+      });
+      renderBell();
+      if(activeTab==='bookings') render();
+    }catch(e){}
+  });
+}
+function goTab(id){
+  activeTab=id;
+  try{ history.replaceState(null,'','#'+id); }catch(e){ location.hash=id; }
+  if(id==='bookings'){ loadBookings().then(render); } else render();
+}
+function renderTabs(){
+  var allTabs=[['tables','Live Tables'],['bookings','Bookings'],['khata','Khata'],['canteen','Canteen'],['finance','Finance'],['history','Sales History'],['income','Income'],['customertabs','Customer Tabs'],['reports','Reports'],['admin','Admin']];
+  var tabs = role==='admin' ? allTabs : allTabs.filter(function(t){return t[0]!=='admin' && t[0]!=='reports';});
+  if(role!=='admin' && (activeTab==='admin'||activeTab==='reports')) activeTab='tables';
+  var box=document.getElementById('cpTabs'); box.innerHTML='';
+  tabs.forEach(function(t){
+    var b=el('button','cp-tab'+(activeTab===t[0]?' active':''),t[1]);
+    b.onclick=function(){ goTab(t[0]); };
+    box.appendChild(b);
+  });
+  renderRoleBtn();
+  renderBell();
+}
+
+function render(){
+  renderTabs();
+  var body=document.getElementById('cpBody');
+  body.innerHTML='';
+  if(activeTab==='tables') renderTables(body);
+  else if(activeTab==='khata') renderKhata(body);
+  else if(activeTab==='canteen') renderCanteen(body);
+  else if(activeTab==='history') renderHistory(body);
+  else if(activeTab==='income') renderIncome(body);
+  else if(activeTab==='admin') renderAdmin(body);
+  else if(activeTab==='bookings') renderBookings(body);
+  else if(activeTab==='finance') renderFinance(body);
+  else if(activeTab==='customertabs') renderCustomerTabs(body);
+  else if(activeTab==='reports') renderReports(body);
+}
+
+function renderAvailability(body){
+  var total=state.stations.length;
+  var free=state.stations.filter(function(s){return s.status==='idle';}).length;
+  var banner=el('div','cp-avail-banner','<b>'+free+' of '+total+'</b> tables free right now');
+  body.appendChild(banner);
+  if(total){
+    var strip=el('div','cp-avail-strip');
+    state.stations.forEach(function(st){
+      var isFree=st.status==='idle';
+      strip.appendChild(el('div','cp-avail-chip '+(isFree?'free':'busy'),'<span class="dot"></span>'+st.name+(isFree?' — free':' — busy')));
+    });
+    body.appendChild(strip);
+  }
+}
+
+function isToday(ts){
+  var d=new Date(ts), t=new Date();
+  return d.toDateString()===t.toDateString();
+}
+function renderCashBanner(body){
+  var sales = cashPeriod==='today' ? state.sales.filter(function(s){return isToday(s.end);}) : state.sales;
+  var cash = sales.reduce(function(a,s){return a+s.cash;},0);
+  var online = sales.reduce(function(a,s){return a+s.online;},0);
+  var wrap=el('div','cp-cash-banner');
+  wrap.innerHTML =
+    '<div class="cp-cash-item"><span class="cp-cash-icon">\uD83D\uDCB5</span><div><div class="cp-cash-label">CASH RECEIVED</div><div class="cp-cash-value">'+fmtMoney(cash)+'</div></div></div>'+
+    '<div class="cp-cash-item"><span class="cp-cash-icon">\uD83D\uDCF1</span><div><div class="cp-cash-label">ONLINE RECEIVED</div><div class="cp-cash-value">'+fmtMoney(online)+'</div></div></div>';
+  var toggle=el('div','cp-period-toggle');
+  var t1=el('button','',"Today"); t1.className=cashPeriod==='today'?'active':'';
+  t1.onclick=function(){ cashPeriod='today'; render(); };
+  var t2=el('button','',"All time"); t2.className=cashPeriod==='all'?'active':'';
+  t2.onclick=function(){ cashPeriod='all'; render(); };
+  toggle.appendChild(t1); toggle.appendChild(t2);
+  wrap.appendChild(toggle);
+  body.appendChild(wrap);
+}
+function renderCategoryMetrics(body){
+  var categories=[];
+  state.stations.forEach(function(s){ if(categories.indexOf(s.category)===-1) categories.push(s.category); });
+  var total=state.stations.length;
+  var activeTotal=state.stations.filter(function(s){return s.status==='running';}).length;
+  var cards=[{label:'TOTAL STATIONS',sub:'Total stations active in lounge',value:activeTotal+' / '+total}];
+  categories.forEach(function(cat){
+    var catStations=state.stations.filter(function(s){return s.category===cat;});
+    var occ=catStations.filter(function(s){return s.status==='running';}).length;
+    cards.push({label:cat.toUpperCase()+' IN-USE',sub:'Total '+cat+' stations occupied',value:occ+' / '+catStations.length});
+  });
+  var visibleCount = showAllCategoryMetrics ? cards.length : Math.min(4,cards.length);
+  var grid=el('div','cp-metrics');
+  for(var i=0;i<visibleCount;i++){
+    grid.appendChild(el('div','cp-metric','<b>'+cards[i].value+'</b><span style="display:block;font-weight:600;color:var(--ink);font-size:11px;letter-spacing:.3px;margin-bottom:2px;">'+cards[i].label+'</span><span>'+cards[i].sub+'</span>'));
+  }
+  body.appendChild(grid);
+  if(cards.length>4){
+    var toggleBtn=el('button','cp-btn ghost', showAllCategoryMetrics ? 'Show less categories' : 'View all categories ('+(cards.length-4)+' more)');
+    toggleBtn.style.cssText='width:100%;margin-bottom:14px;font-size:12px;';
+    toggleBtn.onclick=function(){ showAllCategoryMetrics=!showAllCategoryMetrics; render(); };
+    body.appendChild(toggleBtn);
+  }
+}
+function renderCategoryPills(body){
+  var categories=[];
+  state.stations.forEach(function(s){ if(categories.indexOf(s.category)===-1) categories.push(s.category); });
+  var wrap=el('div','cp-cat-pills');
+  var allBtn=el('button','',"All Stations"); allBtn.className=categoryFilter==='all'?'active':'';
+  allBtn.onclick=function(){ categoryFilter='all'; render(); };
+  wrap.appendChild(allBtn);
+  categories.forEach(function(cat){
+    var b=el('button','',cat); b.className=categoryFilter===cat?'active':'';
+    b.onclick=function(){ categoryFilter=cat; render(); };
+    wrap.appendChild(b);
+  });
+  body.appendChild(wrap);
+}
+function renderUnitToggle(){
+  var wrap=el('div','cp-unit-toggle');
+  var hourBtn=el('button','',rateUnit==='hour'?'Hour':'Hour');
+  hourBtn.className=rateUnit==='hour'?'active':'';
+  hourBtn.onclick=function(){ rateUnit='hour'; render(); };
+  var minBtn=el('button','',rateUnit==='min'?'Minute':'Minute');
+  minBtn.className=rateUnit==='min'?'active':'';
+  minBtn.onclick=function(){ rateUnit='min'; render(); };
+  wrap.appendChild(hourBtn); wrap.appendChild(minBtn);
+  return wrap;
+}
+
+function renderTables(body){
+  renderCashBanner(body);
+  renderCategoryMetrics(body);
+  renderAvailability(body);
+  renderCategoryPills(body);
+  var row=el('div','cp-row');
+  row.appendChild(el('h2','cp-h2','Live tables & arenas'));
+  var rightWrap=el('div',''); rightWrap.style.cssText='display:flex;align-items:center;gap:8px;';
+  rightWrap.appendChild(renderUnitToggle());
+  if(role==='admin'){
+    var addBtn=el('button','cp-btn brass','+ Add table');
+    addBtn.onclick=openAddStation;
+    rightWrap.appendChild(addBtn);
+  }
+  row.appendChild(rightWrap);
+  body.appendChild(row);
+  body.appendChild(el('div','cp-note','Rate display: '+(rateUnit==='hour'?'per hour':'per minute')+' (for reference only — actual billing uses each table\u2019s configured mode).'));
+
+  var grid=el('div','cp-grid');
+  var visibleStations = categoryFilter==='all' ? state.stations : state.stations.filter(function(s){return s.category===categoryFilter;});
+  visibleStations.forEach(function(st){
+    var running=st.status==='running';
+    var card=el('div','cp-card'+(running?' running':''));
+    var top=el('div','',
+      '<div class="cp-tname">'+st.name+'</div><div class="cp-cat">'+st.category+'</div>');
+    card.appendChild(top);
+    card.appendChild(el('span','cp-pill '+(running?'on':'idle'), running?'Running':'Idle'));
+    if(running && st.pauseStart) card.appendChild(el('span','cp-pill paused','Paused'));
+    if(running){
+      var tm=el('div','cp-timer'); tm.id='timer-'+st.id;
+      card.appendChild(tm);
+      var costLine=el('div','cp-sub'); costLine.id='cost-'+st.id;
+      costLine.innerHTML='Rate: '+fmtMoney(currentRate(st))+rateLabel(st)+(isPeakNow(st)?' · peak':'')+' · Running: <b style="color:var(--felt);">'+fmtMoney(gameCost(st))+'</b>';
+      card.appendChild(costLine);
+      if(st.gameLog.length){
+        var gamesBox=el('div','cp-items'); gamesBox.id='games-'+st.id;
+        card.appendChild(gamesBox);
+        renderGameLogItems(gamesBox,st);
+      }
+      if(st.orders.length){
+        var itemsBox=el('div','cp-items'); itemsBox.id='items-'+st.id;
+        card.appendChild(itemsBox);
+        renderOrderItems(itemsBox,st);
+      }
+      var grandLine=el('div','cp-sub'); grandLine.id='grand-'+st.id;
+      grandLine.style.fontWeight='600'; grandLine.style.marginTop='4px';
+      grandLine.textContent='Bill so far: '+fmtMoney(gameCost(st)+canteenTotal(st));
+      card.appendChild(grandLine);
+      if(st.bookingAdvance>0){
+        card.appendChild(el('div','cp-sub','Advance already paid: '+fmtMoney(st.bookingAdvance)+' (adjusted at settle)'));
+      }
+      var btns=el('div','cp-cardbtns');
+      var pauseBtn=el('button','cp-btn ghost',st.pauseStart?'Resume':'Pause');
+      pauseBtn.onclick=function(){ togglePause(st.id); };
+      var offBtn=el('button','cp-btn ghost','On/Off');
+      offBtn.onclick=function(){ openGameOff(st.id); };
+      var addItemBtn=el('button','cp-btn ghost','+ Items');
+      addItemBtn.onclick=function(){ openStationOrders(st.id); };
+      var stopBtn=el('button','cp-btn danger','Settle & bill');
+      stopBtn.onclick=function(){ openBill(st.id); };
+      btns.appendChild(pauseBtn); btns.appendChild(offBtn); btns.appendChild(addItemBtn); btns.appendChild(stopBtn);
+      card.appendChild(btns);
+    } else {
+      var rateSub = rateUnit==='hour'
+        ? ('Regular '+fmtMoney(st.regularRateHour)+' · Peak '+fmtMoney(st.peakRateHour)+' /hr')
+        : ('Regular '+fmtMoney(st.regularRateMin)+' · Peak '+fmtMoney(st.peakRateMin)+' /min');
+      card.appendChild(el('div','cp-sub',rateSub));
+      var btns2=el('div','cp-cardbtns');
+      var startBtn=el('button','cp-btn','Start');
+      startBtn.style.flex='1 1 100%';
+      startBtn.onclick=function(){ openStart(st.id); };
+      btns2.appendChild(startBtn);
+      card.appendChild(btns2);
+    }
+    grid.appendChild(card);
+  });
+  body.appendChild(grid);
+  if(!visibleStations.length) body.appendChild(el('div','cp-empty', state.stations.length? 'No tables in this category.' : 'No tables yet. Add one to get started.'));
+  startTicking();
+}
+
+function renderOrderItems(box,st){
+  box.innerHTML='';
+  st.orders.forEach(function(o){
+    if(o.custom){
+      box.appendChild(el('div','cp-item-row','<span>'+o.name+' × '+o.qty+'</span><span>'+fmtMoney((o.price||0)*o.qty)+'</span>'));
+      return;
+    }
+    var p=state.products.find(function(x){return x.id===o.pid;});
+    if(!p) return;
+    box.appendChild(el('div','cp-item-row','<span>'+p.name+' × '+o.qty+'</span><span>'+fmtMoney(p.price*o.qty)+'</span>'));
+  });
+}
+function renderGameLogItems(box,st){
+  box.innerHTML='';
+  st.gameLog.forEach(function(g,i){
+    var tabTag='';
+    if(g.customerTabId){
+      var ct=state.customerTabs.find(function(t){return t.id===g.customerTabId;});
+      tabTag = g.paidOffByTab
+        ? ' <span style="color:var(--ok);font-size:10px;">(paid — '+(ct?ct.name:'tab')+')</span>'
+        : ' <span style="color:var(--brass);font-size:10px;">(tab: '+(ct?ct.name:'?')+')</span>';
+    }
+    box.appendChild(el('div','cp-item-row','<span>Game '+(i+1)+' — '+g.name+tabTag+'</span><span>'+fmtDur(g.durationSec)+'</span>'));
+  });
+}
+function startTicking(){
+  if(timerHandle) clearInterval(timerHandle);
+  timerHandle=setInterval(function(){
+    state.stations.filter(function(s){return s.status==='running';}).forEach(function(st){
+      var e=document.getElementById('timer-'+st.id);
+      if(e) e.textContent=fmtDur(elapsedSec(st));
+      var c=document.getElementById('cost-'+st.id);
+      if(c) c.innerHTML='Rate: '+fmtMoney(currentRate(st))+rateLabel(st)+(isPeakNow(st)?' · peak':'')+' · Running: <b style="color:var(--felt);">'+fmtMoney(gameCost(st))+'</b>';
+      var g=document.getElementById('grand-'+st.id);
+      if(g) g.textContent='Bill so far: '+fmtMoney(gameCost(st)+canteenTotal(st));
+    });
+    var clk=document.getElementById('cpClock');
+    if(clk) clk.textContent=new Date().toLocaleTimeString();
+  },1000);
+}
+
+function togglePause(id){
+  var st=state.stations.find(function(s){return s.id===id;});
+  if(st.pauseStart){ st.pausedMs=(st.pausedMs||0)+(Date.now()-st.pauseStart); st.pauseStart=null; }
+  else { st.pauseStart=Date.now(); }
+  saveState(); render();
+}
+
+function openGameOff(id){
+  var st=state.stations.find(function(s){return s.id===id;});
+  var openTabs=state.customerTabs.filter(function(ct){return ct.status==='open';});
+  var tabOptions='<option value="">— No tab (table pe hi rahega)</option>';
+  openTabs.forEach(function(ct){
+    tabOptions+='<option value="'+ct.id+'">'+ct.name+' (Tab #'+ct.id.slice(-4)+')</option>';
+  });
+  tabOptions+='<option value="__new__">+ Naya tab kholein (auto-create)</option>';
+  var tabSelectHtml='<div class="cp-field"><label>Customer tab se link karein? (optional)</label><select id="mOffTab">'+tabOptions+'</select></div>';
+
+  showModal('On / Off — '+st.name,
+    '<div class="cp-sub" style="margin-bottom:10px;">Jab ek game khatam ho, jis customer ke naam par yeh game "off" karni hai woh likhein — pichla game record ho jayega aur agla game turant shuru ho jayega (meter chalta rahega).</div>'+
+    '<div class="cp-field"><label>Off kis naam par karna hai?</label><input id="mOffName" placeholder="e.g. Zaid"></div>'+
+    tabSelectHtml,
+    function(){
+      var name=document.getElementById('mOffName').value.trim();
+      if(!name) return;
+      var logged=loggedSoFar(st);
+      var total=elapsedSec(st);
+      var segDuration=Math.max(0,total-logged);
+      var segStart=Date.now()-segDuration*1000;
+      var segCost=costForDuration(st,rateAt(st,new Date(segStart)),segDuration);
+      var tabSelect=document.getElementById('mOffTab');
+      var tabId=tabSelect?tabSelect.value:'';
+      if(tabId==='__new__'){
+        var newTab={id:'ct'+Date.now(),name:name,phone:'',status:'open',games:[],settledAt:null,totalPaid:0};
+        state.customerTabs.push(newTab);
+        tabId=newTab.id;
+      }
+      var gameEntry={name:name,durationSec:segDuration,startedAt:segStart,endedAt:Date.now(),customerTabId:tabId||null,paidOffByTab:false};
+      st.gameLog.push(gameEntry);
+      if(tabId){
+        var tab=state.customerTabs.find(function(ct){return ct.id===tabId;});
+        if(tab){
+          tab.games.push({stationId:st.id,stationName:st.name,gameName:name,durationSec:segDuration,cost:segCost,startedAt:segStart,endedAt:Date.now(),gameIndex:st.gameLog.length-1});
+        }
+      }
+      saveState(); closeModal(); render();
+    },'Save & start next game');
+}
+
+function stationFormHtml(st){
+  st=st||{};
+  return '<div class="cp-field"><label>Table name</label><input id="mName" placeholder="e.g. Table 3" value="'+(st.name||'')+'"></div>'+
+  '<div class="cp-field"><label>Category</label><input id="mCat" placeholder="Snooker / 8-Ball / PS5" value="'+(st.category||'')+'"></div>'+
+  '<div class="cp-field"><label>Billing mode</label><select id="mType">'+
+    '<option value="hour"'+(st.mode==='hour'?' selected':'')+'>Per hour only</option>'+
+    '<option value="min"'+(st.mode==='min'?' selected':'')+'>Per minute only</option>'+
+    '<option value="both"'+(st.mode==='both'?' selected':'')+'>Both — choose at start</option>'+
+  '</select></div>'+
+  '<div class="cp-sub" style="margin-bottom:6px;">Per-hour rates</div>'+
+  '<div class="cp-split"><div class="cp-field"><label>Regular /hr</label><input id="mRegH" type="number" value="'+(st.regularRateHour!=null?st.regularRateHour:300)+'"></div>'+
+  '<div class="cp-field"><label>Peak /hr</label><input id="mPeakH" type="number" value="'+(st.peakRateHour!=null?st.peakRateHour:450)+'"></div></div>'+
+  '<div class="cp-sub" style="margin-bottom:6px;">Per-minute rates</div>'+
+  '<div class="cp-split"><div class="cp-field"><label>Regular /min</label><input id="mRegM" type="number" step="0.1" value="'+(st.regularRateMin!=null?st.regularRateMin:5)+'"></div>'+
+  '<div class="cp-field"><label>Peak /min</label><input id="mPeakM" type="number" step="0.1" value="'+(st.peakRateMin!=null?st.peakRateMin:7.5)+'"></div></div>'+
+  '<div class="cp-sub" style="margin-bottom:6px;">Peak hours window</div>'+
+  '<div class="cp-split"><div class="cp-field"><label>Peak starts</label><input id="mPeakStart" type="time" value="'+(st.peakStart||'18:00')+'"></div>'+
+  '<div class="cp-field"><label>Peak ends</label><input id="mPeakEnd" type="time" value="'+(st.peakEnd||'23:00')+'"></div></div>';
+}
+function readStationForm(target){
+  target.name=document.getElementById('mName').value.trim();
+  target.category=document.getElementById('mCat').value||'General';
+  target.mode=document.getElementById('mType').value;
+  target.regularRateHour=+document.getElementById('mRegH').value||0;
+  target.peakRateHour=+document.getElementById('mPeakH').value||0;
+  target.regularRateMin=+document.getElementById('mRegM').value||0;
+  target.peakRateMin=+document.getElementById('mPeakM').value||0;
+  target.peakStart=document.getElementById('mPeakStart').value||'18:00';
+  target.peakEnd=document.getElementById('mPeakEnd').value||'23:00';
+}
+function openAddStation(){
+  showModal('Add table',stationFormHtml(null),function(){
+    var name=document.getElementById('mName').value.trim();
+    if(!name) return;
+    var st={id:'t'+Date.now(),status:'idle',startTime:null,customer:'',orders:[],sessionMode:null,gameLog:[],pausedMs:0,pauseStart:null};
+    readStationForm(st);
+    state.stations.push(st);
+    saveState(); closeModal(); render();
+  },'Save table');
+}
+function openEditStation(id){
+  var st=state.stations.find(function(s){return s.id===id;});
+  showModal('Edit table — '+st.name,stationFormHtml(st),function(){
+    readStationForm(st);
+    saveState(); closeModal(); render();
+  },'Save changes');
+}
+function deleteStation(id){
+  var st=state.stations.find(function(s){return s.id===id;});
+  if(st.status==='running'){ alert('Stop and bill this table before deleting it.'); return; }
+  if(!confirm('Delete '+st.name+'? This cannot be undone.')) return;
+  state.stations=state.stations.filter(function(s){return s.id!==id;});
+  saveState(); render();
+}
+
+function openStart(id){
+  var st=state.stations.find(function(s){return s.id===id;});
+  var modeField = st.mode==='both'
+    ? '<div class="cp-field"><label>Bill this session by</label><select id="mSessMode"><option value="min">Per minute ('+fmtMoney(isPeakNow(st)?st.peakRateMin:st.regularRateMin)+'/min)</option><option value="hour">Per hour ('+fmtMoney(isPeakNow(st)?st.peakRateHour:st.regularRateHour)+'/hr)</option></select></div>'
+    : '';
+  var now=new Date();
+  var defaultTimeVal=String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0');
+  showModal('Start session — '+st.name,'<div class="cp-field"><label>Customer name (optional)</label><input id="mCust" placeholder="Walk-in"></div>'+
+  modeField+
+  '<div class="cp-field"><label>Start time</label><select id="mStartChoice"><option value="now">Start now</option><option value="custom">Custom time (backdate)</option></select></div>'+
+  '<div class="cp-field" id="mCustomTimeWrap" style="display:none;"><label>Actual start time</label><input id="mCustomTime" type="time" value="'+defaultTimeVal+'"></div>'+
+  '<div class="cp-sub" style="margin-bottom:8px;">'+(isPeakNow(st)?'Peak rate window active':'Regular rate window active')+'</div>',
+  function(){
+    st.customer=document.getElementById('mCust').value.trim();
+    if(st.mode==='both') st.sessionMode=document.getElementById('mSessMode').value;
+    var choice=document.getElementById('mStartChoice').value;
+    var startMs=Date.now();
+    if(choice==='custom'){
+      var t=document.getElementById('mCustomTime').value;
+      if(t){
+        var parts=t.split(':');
+        var d=new Date();
+        d.setHours(+parts[0],+parts[1],0,0);
+        startMs = d.getTime()>Date.now() ? Date.now() : d.getTime();
+      }
+    }
+    st.status='running'; st.startTime=startMs; st.orders=[]; st.gameLog=[]; st.pausedMs=0; st.pauseStart=null;
+    st.bookingId=null; st.bookingAdvance=0; st.bookingCustomerName=''; st.bookingCustomerPhone='';
+    saveState(); closeModal(); render();
+  },'Start match');
+  var sel=document.getElementById('mStartChoice');
+  if(sel) sel.onchange=function(){
+    document.getElementById('mCustomTimeWrap').style.display = sel.value==='custom'?'block':'none';
+  };
+}
+
+function openStationOrders(id){
+  var st=state.stations.find(function(s){return s.id===id;});
+  var html='<div id="ordersListWrap" style="max-height:280px;overflow-y:auto;">';
+  state.products.forEach(function(p){
+    var order=st.orders.find(function(o){return o.pid===p.id;});
+    var qty=order?order.qty:0;
+    html+='<div class="cp-list-item"><div>'+p.name+'<div class="cp-sub">'+fmtMoney(p.price)+' each</div></div>'+
+      '<div class="cp-qty"><button data-pid="'+p.id+'" data-d="-1">-</button><span id="qty-'+p.id+'">'+qty+'</span><button data-pid="'+p.id+'" data-d="1">+</button></div></div>';
+  });
+  /* Show existing custom items */
+  st.orders.filter(function(o){return o.custom;}).forEach(function(o){
+    html+='<div class="cp-list-item" id="ci-'+o.pid+'"><div>'+o.name+'<div class="cp-sub">'+fmtMoney(o.price)+' (custom)</div></div>'+
+      '<div class="cp-qty"><button data-cpid="'+o.pid+'" data-d="-1">−</button><span id="qty-'+o.pid+'">'+o.qty+'</span><button data-cpid="'+o.pid+'" data-d="1">+</button></div></div>';
+  });
+  html+='</div>';
+  html+='<button id="addCustomItemBtn" class="cp-btn" style="margin-top:8px;width:100%;background:var(--accent2,#f59e0b);color:#fff;">+ Custom item (external order)</button>';
+  showModal('Add items — '+st.name,html,function(){ saveState(); closeModal(); render(); },'Done');
+  function bindQtyButtons(){
+    document.querySelectorAll('.cp-qty button[data-pid]').forEach(function(b){
+      b.onclick=function(){
+        var pid=b.getAttribute('data-pid'), d=+b.getAttribute('data-d');
+        var order=st.orders.find(function(o){return o.pid===pid;});
+        if(!order){ order={pid:pid,qty:0}; st.orders.push(order); }
+        var oldQty=order.qty;
+        order.qty=Math.max(0,order.qty+d);
+        var prod=state.products.find(function(x){return x.id===pid;});
+        if(prod){
+          if(d>0 && order.qty>oldQty) prod.stock--;
+          else if(d<0 && order.qty<oldQty) prod.stock++;
+        }
+        st.orders=st.orders.filter(function(o){return o.qty>0;});
+        document.getElementById('qty-'+pid).textContent=order.qty;
+      };
+    });
+    document.querySelectorAll('.cp-qty button[data-cpid]').forEach(function(b){
+      b.onclick=function(){
+        var cpid=b.getAttribute('data-cpid'), d=+b.getAttribute('data-d');
+        var order=st.orders.find(function(o){return o.pid===cpid;});
+        if(!order) return;
+        order.qty=Math.max(0,order.qty+d);
+        if(order.qty<=0){
+          st.orders=st.orders.filter(function(o){return o.pid!==cpid;});
+          var row=document.getElementById('ci-'+cpid);
+          if(row) row.remove();
+        } else {
+          document.getElementById('qty-'+cpid).textContent=order.qty;
+        }
+      };
+    });
+  }
+  bindQtyButtons();
+  document.getElementById('addCustomItemBtn').onclick=function(){
+    var inp='<label class="cp-label">Item name</label><input class="cp-input" id="ciName" placeholder="e.g. Biryani from outside">';
+    inp+='<label class="cp-label">Price (Rs.)</label><input class="cp-input" id="ciPrice" type="number" min="0" placeholder="0">';
+    inp+='<label class="cp-label">Qty</label><input class="cp-input" id="ciQty" type="number" min="1" value="1">';
+    showModal('Add Custom Item',inp,function(){
+      var name=(document.getElementById('ciName').value||'').trim();
+      var price=Math.max(0,parseFloat(document.getElementById('ciPrice').value)||0);
+      var qty=Math.max(1,parseInt(document.getElementById('ciQty').value)||1);
+      if(!name){ alert('Enter item name'); return; }
+      var cid='custom-'+Date.now();
+      st.orders.push({pid:cid,qty:qty,name:name,price:price,custom:true});
+      closeModal();
+      openStationOrders(id); /* re-open main orders modal with new item visible */
+    },'Add');
+  };
+}
+
+function findOrCreateCustomer(name,phone){
+  var cust=state.khata.find(function(k){return k.name.toLowerCase()===name.toLowerCase();});
+  if(!cust){ cust={id:'k'+Date.now(),name:name,phone:phone||'',given:0,paid:0}; state.khata.push(cust); }
+  return cust;
+}
+function requestOrGrantKhata(name,phone,amount,context){
+  if(role==='admin' || !state.settings.khataNeedsApproval){
+    var cust=findOrCreateCustomer(name,phone);
+    cust.given+=amount;
+    return 'approved';
+  }
+  state.khataRequests.push({id:'r'+Date.now(),name:name,phone:phone||'',amount:amount,context:context,status:'pending',createdAt:Date.now()});
+  return 'pending';
+}
+
+function printReceiptHtml(innerHtml){
+  var w=window.open('','_blank','width=380,height=640');
+  if(!w) return;
+  w.document.write('<html><head><title>Receipt</title><style>body{font-family:\'Courier New\',monospace;padding:18px;color:#111;} .line{display:flex;justify-content:space-between;padding:2px 0;font-size:13px;} hr{border:none;border-top:1px dashed #999;margin:8px 0;} h2{text-align:center;margin:0 0 2px;} .center{text-align:center;}</style></head><body>'+innerHtml+'</body></html>');
+  w.document.close();
+  setTimeout(function(){ w.print(); },300);
+}
+
+function openBill(id){
+  var st=state.stations.find(function(s){return s.id===id;});
+  /* Auto-pause timer when settle dialog opens */
+  var wasAlreadyPaused=!!st.pauseStart;
+  if(!st.pauseStart){ st.pauseStart=Date.now(); saveState(); }
+  var now=Date.now();
+  var logged=loggedSoFar(st);
+  var totalElapsed=elapsedSec(st);
+  var openDur=Math.max(0,totalElapsed-logged);
+  var segments=st.gameLog.map(function(g){return g;});
+  if(openDur>0.5) segments.push({name:'Final game',durationSec:openDur,startedAt:now-openDur*1000,endedAt:now,open:true});
+  var gTotal=segments.reduce(function(a,seg){return a+costForDuration(st,rateAt(st,new Date(seg.startedAt)),seg.durationSec);},0);
+  var cTotal=canteenTotal(st), grand=gTotal+cTotal;
+  var advance=st.bookingAdvance||0;
+
+  var tabPaidOff=0;
+  var tabDeductionLines='';
+  segments.forEach(function(seg,i){
+    if(seg.paidOffByTab && seg.customerTabId){
+      var ct=state.customerTabs.find(function(t){return t.id===seg.customerTabId;});
+      var segCost=costForDuration(st,rateAt(st,new Date(seg.startedAt)),seg.durationSec);
+      tabPaidOff+=segCost;
+      tabDeductionLines+='<div class="line" style="color:var(--ok);"><span>Game '+(i+1)+' — '+seg.name+' (paid by '+(ct?ct.name:'tab')+')</span><span>-'+fmtMoney(segCost)+'</span></div>';
+    }
+  });
+
+  var netGrand=Math.max(0,grand-advance-tabPaidOff);
+  var invoiceNo=100000+state.invoiceCounter;
+  var startD=new Date(st.startTime), endD=new Date(now);
+
+  var breakdownHtml='';
+  if(st.gameLog.length){
+    breakdownHtml+='<hr>';
+    segments.forEach(function(seg,i){
+      var cost=costForDuration(st,rateAt(st,new Date(seg.startedAt)),seg.durationSec);
+      var paidTag = seg.paidOffByTab ? ' <span style="color:var(--ok);font-size:11px;">(paid off)</span>' : '';
+      breakdownHtml+='<div class="line"><span>Game '+(i+1)+' — '+seg.name+paidTag+'</span><span>'+fmtDur(seg.durationSec)+' · '+fmtMoney(cost)+'</span></div>';
+    });
+  }
+
+  var deductionsHtml='';
+  if(advance>0){
+    deductionsHtml+='<div class="line"><span>Advance already paid</span><span>-'+fmtMoney(advance)+'</span></div>';
+  }
+  if(tabPaidOff>0){
+    deductionsHtml+=tabDeductionLines;
+    deductionsHtml+='<div class="line"><span>Total paid off via customer tabs</span><span>-'+fmtMoney(tabPaidOff)+'</span></div>';
+  }
+  if(deductionsHtml){
+    deductionsHtml+='<hr><div class="line" style="font-weight:600;font-size:15px;"><span>Net payable</span><span>'+fmtMoney(netGrand)+'</span></div>';
+  }
+
+  var html='<div class="cp-bill">'+
+    '<div class="line"><span>Bill No</span><span>#SS-'+invoiceNo+'</span></div>'+
+    '<div class="line"><span>Date</span><span>'+startD.toLocaleDateString()+'</span></div>'+
+    '<div class="line"><span>Table / Station</span><span>'+st.name+' ('+st.category+')</span></div>'+
+    '<div class="line"><span>Start → End</span><span>'+fmtTime12(startD)+' → '+fmtTime12(endD)+'</span></div>'+
+    '<div class="line"><span>Total play time</span><span>'+fmtDur(totalElapsed)+'</span></div>'+
+    breakdownHtml+
+    '<hr><div class="line"><span>Total game charges</span><span>'+fmtMoney(gTotal)+'</span></div>'+
+    '<div class="line"><span>Canteen</span><span>'+fmtMoney(cTotal)+'</span></div>'+
+    '<hr><div class="line" style="font-weight:600;font-size:15px;"><span>Grand total</span><span>'+fmtMoney(grand)+'</span></div>'+
+    deductionsHtml+'</div>'+
+    '<div class="cp-split" style="margin-top:14px;"><div class="cp-field"><label>Cash (PKR)</label><input id="mCash" type="number" value="'+Math.round(netGrand)+'"></div>'+
+    '<div class="cp-field"><label>Online (PKR)</label><input id="mOnline" type="number" value="0"></div></div>'+
+    '<div class="cp-field"><label>Customer name (for khata / advance ledger, optional)</label><input id="mKhata" placeholder="Leave blank if fully settled, no ledger" value="'+(st.bookingCustomerName||'')+'"></div>'+
+    '<button class="cp-btn ghost" id="mPrintBtn" style="width:100%;margin-bottom:8px;">Print receipt</button>';
+
+  showModal('Settle & close — '+st.name,html,function(){
+    var cash=+document.getElementById('mCash').value||0, online=+document.getElementById('mOnline').value||0;
+    var cashVariance=(cash+online)-netGrand;
+    var khName=document.getElementById('mKhata').value.trim();
+    var remaining=Math.round(Math.max(0,netGrand-cash-online));
+    var overpaid=Math.round(Math.max(0,(cash+online)-netGrand));
+    var khStatus='none';
+    if(remaining>=1 && khName){
+      khStatus=requestOrGrantKhata(khName,'',remaining,st.name+' session');
+    } else if(overpaid>=1 && khName){
+      findOrCreateCustomer(khName,'').paid+=overpaid;
+      khStatus='advance';
+    }
+    state.invoiceCounter++;
+    state.sales.push({id:'s'+Date.now(),invoiceNo:invoiceNo,station:st.name,customer:st.customer,
+      start:st.startTime,end:now,duration:totalElapsed,gameTotal:gTotal,canteenTotal:cTotal,total:grand,
+      advancePaid:advance,tabPaidOff:tabPaidOff,netTotal:netGrand,
+      cash:cash,online:online,cashVariance:cashVariance,
+      khata:remaining>0?remaining:0,khataStatus:khStatus,games:segments,
+      orders:st.orders.map(function(o){if(o.custom) return {pid:o.pid,name:o.name,qty:o.qty,price:o.price,custom:true}; var p=state.products.find(function(x){return x.id===o.pid;});return {pid:o.pid,name:p?p.name:'?',qty:o.qty,price:p?p.price:0};})});
+    st.status='idle'; st.startTime=null; st.customer=''; st.orders=[]; st.gameLog=[]; st.pausedMs=0; st.pauseStart=null;
+    st.bookingId=null; st.bookingAdvance=0; st.bookingCustomerName=''; st.bookingCustomerPhone='';
+    saveState(); closeModal(); render();
+    if(khStatus==='pending') alert('Sent to '+khName+' for admin approval — Rs. '+Math.round(remaining)+' udhaar is pending until approved.');
+    if(khStatus==='advance') alert('Rs. '+Math.round(overpaid)+' extra received — added as advance credit for '+khName+'.');
+  },'Settle & close',function(){
+    /* On cancel/close — resume timer if it was not already paused before */
+    if(!wasAlreadyPaused && st.pauseStart){
+      st.pausedMs=(st.pausedMs||0)+(Date.now()-st.pauseStart);
+      st.pauseStart=null;
+      saveState(); render();
+    }
+  });
+
+  var printBtn=document.getElementById('mPrintBtn');
+  if(printBtn) printBtn.onclick=function(){
+    var receiptInner='<h2>STRIKE & SERVE</h2><div class="center">Club & Gaming Lounge POS</div><hr>'+
+      '<div class="line"><span>Bill No</span><span>#SS-'+invoiceNo+'</span></div>'+
+      '<div class="line"><span>Date</span><span>'+startD.toLocaleDateString()+'</span></div><hr>'+
+      '<div class="line"><span>Table</span><span>'+st.name+' ('+st.category+')</span></div>'+
+      '<div class="line"><span>Start → End</span><span>'+fmtTime12(startD)+' → '+fmtTime12(endD)+'</span></div>'+
+      '<div class="line"><span>Play time</span><span>'+fmtDur(totalElapsed)+'</span></div>'+
+      breakdownHtml+
+      '<hr><div class="line"><span>Game charges</span><span>'+fmtMoney(gTotal)+'</span></div>'+
+      '<div class="line"><span>Canteen</span><span>'+fmtMoney(cTotal)+'</span></div>'+
+      '<hr><div class="line" style="font-weight:700;"><span>GRAND TOTAL</span><span>'+fmtMoney(grand)+'</span></div><hr>'+
+      '<div class="center">THANK YOU FOR PLAYING!</div><div class="center">Powered by Royal Snooker Academy POS</div>';
+    printReceiptHtml(receiptInner);
+  };
+}
+
+function renderKhata(body){
+  var row=el('div','cp-row');
+  row.appendChild(el('h2','cp-h2','Customer khata & udhaar'));
+  var addBtn=el('button','cp-btn brass','+ Add entry');
+  addBtn.onclick=openAddKhata;
+  row.appendChild(addBtn);
+  body.appendChild(row);
+
+  var totalPending=state.khata.reduce(function(a,k){return a+Math.max(0,k.given-k.paid);},0);
+  var totalAdvance=state.khata.reduce(function(a,k){return a+Math.max(0,k.paid-k.given);},0);
+  var totalAwaiting=state.khataRequests.filter(function(r){return r.status==='pending';}).reduce(function(a,r){return a+r.amount;},0);
+  var m=el('div','cp-metrics');
+  m.appendChild(el('div','cp-metric','<b>'+fmtMoney(totalPending)+'</b><span>Total pending udhaar</span>'));
+  m.appendChild(el('div','cp-metric','<b>'+fmtMoney(totalAdvance)+'</b><span>Total advance held</span>'));
+  m.appendChild(el('div','cp-metric','<b>'+fmtMoney(totalAwaiting)+'</b><span>Awaiting admin approval</span>'));
+  body.appendChild(m);
+
+  if(totalAwaiting>0){
+    body.appendChild(el('div','cp-note','Some udhaar requests need admin approval before they count against a customer\u2019s balance.'));
+  }
+
+  if(!state.khata.length){ body.appendChild(el('div','cp-empty','No khata entries yet.')); return; }
+  state.khata.forEach(function(k){
+    var bal=k.given-k.paid;
+    var item=el('div','cp-list-item','<div>'+k.name+'<div class="cp-sub">'+(k.phone||'no phone')+'</div></div>');
+    var tagHtml;
+    if(bal>0) tagHtml='<span class="cp-tag" style="color:#A83232;background:#FBEAEA;">'+fmtMoney(bal)+' due</span>';
+    else if(bal<0) tagHtml='<span class="cp-tag" style="color:#3E7D4B;background:#E6F2E8;">'+fmtMoney(-bal)+' advance</span>';
+    else tagHtml='<span class="cp-tag">cleared</span>';
+    var right=el('div','',tagHtml);
+    item.appendChild(right);
+    if(bal>0){
+      var payBtn=el('button','cp-btn ghost',"Receive");
+      payBtn.style.marginLeft='8px'; payBtn.style.padding='5px 10px'; payBtn.style.fontSize='12px';
+      payBtn.onclick=function(){
+        var amt=prompt('Amount received from '+k.name+' (balance '+fmtMoney(bal)+'):');
+        if(amt){ k.paid+=Math.min(bal,+amt||0); saveState(); render(); }
+      };
+      item.appendChild(payBtn);
+    }
+    body.appendChild(item);
+  });
+}
+
+function openAddKhata(){
+  showModal('Add ledger entry','<div class="cp-field"><label>Customer name</label><input id="mkName"></div>'+
+  '<div class="cp-field"><label>Phone (optional)</label><input id="mkPhone"></div>'+
+  '<div class="cp-field"><label>Entry type</label><select id="mkType"><option value="due">Udhaar — customer owes club</option><option value="advance">Advance — customer paid extra</option></select></div>'+
+  '<div class="cp-field"><label>Amount (PKR)</label><input id="mkAmt" type="number"></div>',
+  function(){
+    var name=document.getElementById('mkName').value.trim();
+    if(!name) return;
+    var amt=+document.getElementById('mkAmt').value||0;
+    var phone=document.getElementById('mkPhone').value;
+    var type=document.getElementById('mkType').value;
+    if(type==='advance'){
+      findOrCreateCustomer(name,phone).paid+=amt;
+      saveState(); closeModal(); render();
+    } else {
+      var status=requestOrGrantKhata(name,phone,amt,'Manual entry');
+      saveState(); closeModal(); render();
+      if(status==='pending') alert('Sent for admin approval — Rs. '+Math.round(amt)+' udhaar for '+name+' is pending.');
+    }
+  },'Save entry');
+}
+
+function renderCanteen(body){
+  var row=el('div','cp-row');
+  row.appendChild(el('h2','cp-h2','Canteen & inventory stock'));
+  var btnWrap=el('div',''); btnWrap.style.cssText='display:flex;gap:6px;flex-wrap:wrap;';
+  if(role==='admin'){
+    var addBtn=el('button','cp-btn brass','+ New item');
+    addBtn.onclick=openAddProduct;
+    btnWrap.appendChild(addBtn);
+  }
+  var stockBtn=el('button','cp-btn ghost','+ Stock in');
+  stockBtn.onclick=openStockIn;
+  btnWrap.appendChild(stockBtn);
+  var walkInBtn=el('button','cp-btn ghost','Walk-in sale');
+  walkInBtn.onclick=openWalkInSale;
+  btnWrap.appendChild(walkInBtn);
+  if(role==='admin'){
+    var adjBtn=el('button','cp-btn ghost','Stock adjust');
+    adjBtn.onclick=openStockAdjust;
+    btnWrap.appendChild(adjBtn);
+  }
+  row.appendChild(btnWrap);
+  body.appendChild(row);
+  if(!state.products.length){ body.appendChild(el('div','cp-empty','No items yet.')); return; }
+  state.products.forEach(function(p){
+    var stockStyle=p.stock<0?'color:var(--danger);background:#FBEAEA;':'';
+    var item=el('div','cp-list-item','<div>'+p.name+'<div class="cp-sub">Sale: '+fmtMoney(p.price)+(role==='admin'?' · Cost: '+fmtMoney(p.costPrice||0):'')+'</div></div>'+
+      '<span class="cp-tag" style="'+stockStyle+'">'+p.stock+' in stock</span>');
+    if(role==='admin'){
+      var editBtn=el('button','cp-btn ghost','Edit');
+      editBtn.style.cssText='padding:4px 8px;font-size:11px;margin-left:8px;';
+      editBtn.onclick=(function(pid){ return function(){ openEditProduct(pid); }; })(p.id);
+      item.appendChild(editBtn);
+    }
+    body.appendChild(item);
+  });
+  /* Walk-in sales history */
+  if(state.canteenSales.length){
+    body.appendChild(el('h2','cp-h2','Walk-in sales'));
+    state.canteenSales.slice().reverse().slice(0,15).forEach(function(s){
+      var lines=s.items.map(function(i){return i.name+'×'+i.qty;}).join(', ');
+      var item=el('div','cp-list-item','<div>'+lines+'<div class="cp-sub">'+new Date(s.createdAt).toLocaleString()+' · '+s.payMode+'</div></div>'+
+        '<span class="cp-tag">'+fmtMoney(s.total)+'</span>');
+      body.appendChild(item);
+    });
+  }
+}
+
+function openAddProduct(){
+  showModal('Add canteen product','<div class="cp-field"><label>Item name</label><input id="mpName"></div>'+
+  '<div class="cp-field"><label>Sale price (PKR)</label><input id="mpPrice" type="number"></div>'+
+  '<div class="cp-field"><label>Cost price (PKR)</label><input id="mpCost" type="number" value="0"></div>'+
+  '<div class="cp-field"><label>Stock quantity</label><input id="mpStock" type="number" value="20"></div>',
+  function(){
+    var name=document.getElementById('mpName').value.trim();
+    if(!name) return;
+    state.products.push({id:'p'+Date.now(),name:name,price:+document.getElementById('mpPrice').value||0,costPrice:+document.getElementById('mpCost').value||0,stock:+document.getElementById('mpStock').value||0});
+    saveState(); closeModal(); render();
+  },'Save product');
+}
+function openEditProduct(pid){
+  var p=state.products.find(function(x){return x.id===pid;});
+  if(!p) return;
+  showModal('Edit product — '+p.name,
+    '<div class="cp-field"><label>Item name</label><input id="mpName" value="'+p.name+'"></div>'+
+    '<div class="cp-field"><label>Sale price (PKR)</label><input id="mpPrice" type="number" value="'+p.price+'"></div>'+
+    '<div class="cp-field"><label>Cost price (PKR)</label><input id="mpCost" type="number" value="'+(p.costPrice||0)+'"></div>'+
+    '<div class="cp-field"><label>Current stock</label><input id="mpStock" type="number" value="'+p.stock+'"></div>',
+    function(){
+      p.name=document.getElementById('mpName').value.trim()||p.name;
+      p.price=+document.getElementById('mpPrice').value||0;
+      p.costPrice=+document.getElementById('mpCost').value||0;
+      p.stock=+document.getElementById('mpStock').value;
+      saveState(); closeModal(); render();
+    },'Save changes');
+}
+function openStockIn(){
+  var opts=state.products.map(function(p){return '<option value="'+p.id+'">'+p.name+' (stock: '+p.stock+')</option>';}).join('');
+  showModal('Stock in / purchase',
+    '<div class="cp-field"><label>Product</label><select id="mSiProd">'+opts+'</select></div>'+
+    '<div class="cp-field"><label>Quantity to add</label><input id="mSiQty" type="number" value="1"></div>'+
+    '<div class="cp-field"><label>Total purchase amount (PKR)</label><input id="mSiAmt" type="number" value="0"></div>'+
+    '<div class="cp-field"><label>Paid from</label><select id="mSiMode"><option value="cash">Cash</option><option value="online">Online</option></select></div>'+
+    '<div class="cp-field"><label>Note (optional)</label><input id="mSiNote" placeholder="Supplier name etc."></div>',
+    function(){
+      var pid=document.getElementById('mSiProd').value;
+      var qty=+document.getElementById('mSiQty').value||0;
+      var amt=+document.getElementById('mSiAmt').value||0;
+      if(qty<=0) return;
+      var p=state.products.find(function(x){return x.id===pid;});
+      if(p) p.stock+=qty;
+      /* Record purchase in register if open */
+      if(amt>0 && state.register.current){
+        state.register.current.entries.push({id:'e'+Date.now(),type:'canteen-purchase',amount:amt,
+          mode:document.getElementById('mSiMode').value,note:(document.getElementById('mSiNote').value.trim()||'Canteen stock')+' — '+(p?p.name:'?')+' ×'+qty,by:role,createdAt:Date.now()});
+      }
+      saveState(); closeModal(); render();
+      showToast('Stock added: '+(p?p.name:'?')+' +'+qty);
+    },'Add stock');
+}
+function openWalkInSale(){
+  var html='<div class="cp-sub" style="margin-bottom:10px;">Bina table ke direct canteen sale — visitors/spectators ke liye</div>';
+  html+='<div style="max-height:220px;overflow-y:auto;">';
+  state.products.forEach(function(p){
+    html+='<div class="cp-list-item"><div>'+p.name+'<div class="cp-sub">'+fmtMoney(p.price)+'</div></div>'+
+      '<div class="cp-qty"><button data-pid="'+p.id+'" data-d="-1">-</button><span id="wq-'+p.id+'">0</span><button data-pid="'+p.id+'" data-d="1">+</button></div></div>';
+  });
+  html+='</div>';
+  html+='<div class="cp-field" style="margin-top:10px;"><label>Pay mode</label><select id="mWalkMode"><option value="cash">Cash</option><option value="online">Online</option></select></div>';
+  var walkItems={};
+  showModal('Walk-in canteen sale',html,function(){
+    var items=[];
+    var total=0;
+    state.products.forEach(function(p){
+      var qty=walkItems[p.id]||0;
+      if(qty>0){
+        items.push({pid:p.id,name:p.name,qty:qty,price:p.price});
+        total+=p.price*qty;
+        p.stock-=qty;
+      }
+    });
+    if(!items.length){ alert('Select at least one item.'); return; }
+    var payMode=document.getElementById('mWalkMode').value;
+    state.canteenSales.push({id:'ws'+Date.now(),items:items,total:total,payMode:payMode,by:role,createdAt:Date.now()});
+    /* Record as income in sales for reporting */
+    state.sales.push({id:'s'+Date.now(),invoiceNo:100000+state.invoiceCounter,station:'Walk-in',customer:'Walk-in',
+      start:Date.now(),end:Date.now(),duration:0,gameTotal:0,canteenTotal:total,total:total,
+      advancePaid:0,tabPaidOff:0,netTotal:total,
+      cash:payMode==='cash'?total:0,online:payMode==='online'?total:0,cashVariance:0,
+      khata:0,khataStatus:'none',games:[],orders:items});
+    state.invoiceCounter++;
+    saveState(); closeModal(); render();
+    showToast('Walk-in sale: '+fmtMoney(total));
+  },'Complete sale');
+  document.querySelectorAll('.cp-qty button').forEach(function(b){
+    b.onclick=function(){
+      var pid=b.getAttribute('data-pid'), d=+b.getAttribute('data-d');
+      walkItems[pid]=(walkItems[pid]||0)+d;
+      if(walkItems[pid]<0) walkItems[pid]=0;
+      var sp=document.getElementById('wq-'+pid);
+      if(sp) sp.textContent=walkItems[pid];
+    };
+  });
+}
+function openStockAdjust(){
+  var opts=state.products.map(function(p){return '<option value="'+p.id+'">'+p.name+' (current: '+p.stock+')</option>';}).join('');
+  showModal('Stock adjust (admin)',
+    '<div class="cp-sub" style="margin-bottom:10px;">Physical count se system stock correct karein. Short = loss, excess = stock add.</div>'+
+    '<div class="cp-field"><label>Product</label><select id="mAdjProd">'+opts+'</select></div>'+
+    '<div class="cp-field"><label>Physical count (actual stock)</label><input id="mAdjCount" type="number" value="0"></div>',
+    function(){
+      var pid=document.getElementById('mAdjProd').value;
+      var count=+document.getElementById('mAdjCount').value;
+      var p=state.products.find(function(x){return x.id===pid;});
+      if(!p) return;
+      var diff=count-p.stock;
+      var oldStock=p.stock;
+      p.stock=count;
+      state.stockAdjustments.push({id:'sa'+Date.now(),productId:pid,productName:p.name,oldStock:oldStock,newStock:count,diff:diff,
+        type:diff<0?'loss':'excess',by:role,createdAt:Date.now()});
+      saveState(); closeModal(); render();
+      if(diff<0) showToast('Stock short: '+p.name+' — '+Math.abs(diff)+' units loss recorded');
+      else if(diff>0) showToast('Stock excess: '+p.name+' — '+diff+' units added');
+      else showToast('Stock matched — no change');
+    },'Save adjustment');
+}
+
+function renderHistory(body){
+  /* --- Cash Variance Ledger (admin only) --- */
+  var variances=state.sales.filter(function(s){ return s.cashVariance && s.cashVariance!==0; });
+  if(variances.length && role==='admin'){
+    body.appendChild(el('h2','cp-h2','Cash variance ledger'));
+    body.appendChild(el('div','cp-note','Staff ne kitna liya vs bill amount — excess (+) ya shortage (-)'));
+    var totalVar=variances.reduce(function(a,s){return a+(s.cashVariance||0);},0);
+    var varSummary=el('div','cp-metric');
+    varSummary.style.marginBottom='12px';
+    if(totalVar>0) varSummary.innerHTML='<b style="color:var(--ok);">+'+fmtMoney(totalVar)+'</b><span>Net excess (staff ke paas extra)</span>';
+    else if(totalVar<0) varSummary.innerHTML='<b style="color:var(--danger);">'+fmtMoney(totalVar)+'</b><span>Net shortage (staff ne kam diye)</span>';
+    else varSummary.innerHTML='<b>Rs. 0</b><span>No net variance</span>';
+    body.appendChild(varSummary);
+    variances.slice().reverse().forEach(function(s){
+      var v=s.cashVariance;
+      var tagStyle = v>0 ? 'color:var(--ok);background:#E6F2E8;' : 'color:var(--danger);background:#FBEAEA;';
+      var tagText = v>0 ? '+'+fmtMoney(v)+' excess' : fmtMoney(v)+' short';
+      var item=el('div','cp-list-item','<div>#SS-'+(s.invoiceNo)+' · '+s.station+
+        '<div class="cp-sub">'+new Date(s.end).toLocaleString()+' · Bill: '+fmtMoney(s.total||0)+' → Paid: '+fmtMoney((s.cash||0)+(s.online||0))+'</div></div>'+
+        '<span class="cp-tag" style="'+tagStyle+'">'+tagText+'</span>');
+      body.appendChild(item);
+    });
+  }
+
+  /* --- Receipt history (expandable) --- */
+  body.appendChild(el('h2','cp-h2','Receipt & billing history'));
+  if(!state.sales.length){ body.appendChild(el('div','cp-empty','No completed sessions yet.')); return; }
+  state.sales.slice().reverse().forEach(function(s){
+    var varTag='';
+    if(role==='admin' && s.cashVariance && s.cashVariance!==0){
+      var vs=s.cashVariance;
+      varTag = vs>0 ? ' <span class="cp-tag" style="color:var(--ok);background:#E6F2E8;font-size:10px;">+'+fmtMoney(vs)+'</span>'
+        : ' <span class="cp-tag" style="color:var(--danger);background:#FBEAEA;font-size:10px;">'+fmtMoney(vs)+'</span>';
+    }
+    var wrap=el('div','',''  );
+    wrap.style.cssText='border:1px solid var(--border);border-radius:10px;margin-bottom:8px;overflow:hidden;';
+    var header=el('div','cp-list-item','<div style="flex:1;"><span style="font-weight:600;">#SS-'+(s.invoiceNo)+'</span> · '+s.station+
+      '<div class="cp-sub">'+new Date(s.end).toLocaleString()+' · '+fmtDur(s.duration)+(s.games&&s.games.length>1?' · '+s.games.length+' games':'')+'</div></div>'+
+      '<span class="cp-tag">'+fmtMoney(s.total)+'</span>'+varTag+
+      ' <span class="cp-expand-arrow" style="margin-left:6px;font-size:12px;transition:transform .2s;">▶</span>');
+    header.style.cursor='pointer';
+    /* Build detail panel */
+    var detail=el('div','');
+    detail.style.cssText='display:none;padding:10px 14px;background:var(--bg);border-top:1px solid var(--border);font-size:13px;';
+    var dHtml='';
+    /* Game breakdown */
+    var games=fbArr(s.games);
+    if(games&&games.length){
+      dHtml+='<div style="font-weight:600;margin-bottom:4px;">Game log</div>';
+      games.forEach(function(g,i){
+        dHtml+='<div style="display:flex;justify-content:space-between;padding:2px 0;"><span>Game '+(i+1)+' — '+g.name+'</span><span>'+fmtDur(g.durationSec)+'</span></div>';
+      });
+    }
+    /* Orders */
+    var orders=fbArr(s.orders);
+    if(orders&&orders.length){
+      dHtml+='<div style="font-weight:600;margin:8px 0 4px;">Items ordered</div>';
+      orders.forEach(function(o){
+        dHtml+='<div style="display:flex;justify-content:space-between;padding:2px 0;"><span>'+o.name+(o.custom?' (custom)':'')+' × '+o.qty+'</span><span>'+fmtMoney((o.price||0)*o.qty)+'</span></div>';
+      });
+    }
+    /* Payment */
+    dHtml+='<div style="font-weight:600;margin:8px 0 4px;">Payment</div>';
+    dHtml+='<div style="display:flex;justify-content:space-between;padding:2px 0;"><span>Game charges</span><span>'+fmtMoney(s.gameTotal||0)+'</span></div>';
+    dHtml+='<div style="display:flex;justify-content:space-between;padding:2px 0;"><span>Canteen</span><span>'+fmtMoney(s.canteenTotal||0)+'</span></div>';
+    dHtml+='<div style="display:flex;justify-content:space-between;padding:2px 0;font-weight:600;border-top:1px dashed var(--border);margin-top:4px;padding-top:4px;"><span>Total</span><span>'+fmtMoney(s.total||0)+'</span></div>';
+    dHtml+='<div style="display:flex;justify-content:space-between;padding:2px 0;"><span>Cash</span><span>'+fmtMoney(s.cash||0)+'</span></div>';
+    dHtml+='<div style="display:flex;justify-content:space-between;padding:2px 0;"><span>Online</span><span>'+fmtMoney(s.online||0)+'</span></div>';
+    if(s.khataAmount) dHtml+='<div style="display:flex;justify-content:space-between;padding:2px 0;color:var(--danger);"><span>Khata</span><span>'+fmtMoney(s.khataAmount)+'</span></div>';
+    if(s.settledBy) dHtml+='<div style="margin-top:6px;color:var(--muted);font-size:11px;">Settled by: '+s.settledBy+'</div>';
+    detail.innerHTML=dHtml;
+    header.onclick=function(){
+      var showing=detail.style.display!=='none';
+      detail.style.display=showing?'none':'block';
+      var arrow=header.querySelector('.cp-expand-arrow');
+      if(arrow) arrow.style.transform=showing?'':'rotate(90deg)';
+    };
+    wrap.appendChild(header);
+    wrap.appendChild(detail);
+    body.appendChild(wrap);
+  });
+}
+
+function renderIncome(body){
+  body.appendChild(el('h2','cp-h2','Income analytics & breakdown'));
+  var gross=state.sales.reduce(function(a,s){return a+s.total;},0);
+  var games=state.sales.reduce(function(a,s){return a+s.gameTotal;},0);
+  var canteen=state.sales.reduce(function(a,s){return a+s.canteenTotal;},0);
+  var cash=state.sales.reduce(function(a,s){return a+s.cash;},0);
+  var online=state.sales.reduce(function(a,s){return a+s.online;},0);
+  var m=el('div','cp-metrics');
+  m.appendChild(el('div','cp-metric','<b>'+fmtMoney(gross)+'</b><span>Total gross revenue</span>'));
+  m.appendChild(el('div','cp-metric','<b>'+fmtMoney(games)+'</b><span>Games earning</span>'));
+  m.appendChild(el('div','cp-metric','<b>'+fmtMoney(canteen)+'</b><span>Canteen sales</span>'));
+  m.appendChild(el('div','cp-metric','<b>'+fmtMoney(cash)+' / '+fmtMoney(online)+'</b><span>Cash / online</span>'));
+  body.appendChild(m);
+  if(!state.sales.length) body.appendChild(el('div','cp-empty','Numbers will populate once you settle a table.'));
+}
+
+function renderReports(body){
+  body.appendChild(el('h2','cp-h2','Reports & Analytics'));
+  if(!state.sales.length){ body.appendChild(el('div','cp-empty','No data yet — settle at least one table to see reports.')); return; }
+
+  /* --- Period filter --- */
+  var filterWrap=el('div',''); filterWrap.style.cssText='display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px;';
+  var periods=[['7','Last 7 days'],['30','Last 30 days'],['all','All time']];
+  var activePeriod='30';
+  periods.forEach(function(p){
+    var btn=el('button','cp-tab'+(activePeriod===p[0]?' active':''),p[1]);
+    btn.onclick=function(){ activePeriod=p[0]; renderReportCharts(); };
+    filterWrap.appendChild(btn);
+  });
+  body.appendChild(filterWrap);
+  var chartsWrap=el('div',''); chartsWrap.id='reportsChartsWrap';
+  body.appendChild(chartsWrap);
+
+  function filterSales(){
+    if(activePeriod==='all') return state.sales;
+    var days=+activePeriod, cutoff=Date.now()-days*86400000;
+    return state.sales.filter(function(s){ return s.end>=cutoff; });
+  }
+
+  function renderReportCharts(){
+    var cw=document.getElementById('reportsChartsWrap'); if(!cw) return;
+    cw.innerHTML='';
+    var sales=filterSales();
+    /* Update period buttons */
+    filterWrap.querySelectorAll('.cp-tab').forEach(function(b,i){ b.className='cp-tab'+(activePeriod===periods[i][0]?' active':''); });
+
+    /* --- KPI metrics --- */
+    var totalRev=sales.reduce(function(a,s){return a+s.total;},0);
+    var totalGames=sales.reduce(function(a,s){return a+s.gameTotal;},0);
+    var totalCanteen=sales.reduce(function(a,s){return a+s.canteenTotal;},0);
+    var totalSessions=sales.length;
+    var avgPerSession=totalSessions?Math.round(totalRev/totalSessions):0;
+    var m=el('div','cp-metrics');
+    m.appendChild(el('div','cp-metric','<b>'+fmtMoney(totalRev)+'</b><span>Total revenue</span>'));
+    m.appendChild(el('div','cp-metric','<b>'+totalSessions+'</b><span>Sessions</span>'));
+    m.appendChild(el('div','cp-metric','<b>'+fmtMoney(avgPerSession)+'</b><span>Avg / session</span>'));
+    m.appendChild(el('div','cp-metric','<b>'+Math.round(totalGames/(totalRev||1)*100)+'% / '+Math.round(totalCanteen/(totalRev||1)*100)+'%</b><span>Games / Canteen split</span>'));
+    cw.appendChild(m);
+
+    /* --- Daily revenue bar chart (inline SVG) --- */
+    var dailyMap={};
+    sales.forEach(function(s){
+      var d=new Date(s.end).toISOString().slice(0,10);
+      if(!dailyMap[d]) dailyMap[d]={game:0,canteen:0};
+      dailyMap[d].game+=s.gameTotal;
+      dailyMap[d].canteen+=s.canteenTotal;
+    });
+    var days=Object.keys(dailyMap).sort();
+    if(days.length>0){
+      cw.appendChild(el('h3','','<b style="font-size:14px;">Daily revenue trend</b>'));
+      var maxVal=0;
+      days.forEach(function(d){ var t=dailyMap[d].game+dailyMap[d].canteen; if(t>maxVal) maxVal=t; });
+      var chartW=Math.min(600,window.innerWidth-40), barW=Math.max(12,Math.min(30,Math.floor((chartW-40)/days.length)-4)), chartH=180;
+      var svg='<svg width="'+chartW+'" height="'+(chartH+30)+'" style="display:block;margin:0 auto 16px;">';
+      /* Y axis labels */
+      for(var yi=0;yi<=4;yi++){
+        var yy=chartH-yi*(chartH/4);
+        svg+='<line x1="35" y1="'+yy+'" x2="'+chartW+'" y2="'+yy+'" stroke="var(--border)" stroke-dasharray="3,3"/>';
+        svg+='<text x="32" y="'+(yy+4)+'" text-anchor="end" font-size="10" fill="var(--muted)">'+Math.round(maxVal*yi/4/1000)+'k</text>';
+      }
+      days.forEach(function(d,i){
+        var x=40+i*(barW+4);
+        var gH=maxVal?dailyMap[d].game/maxVal*chartH:0;
+        var cH=maxVal?dailyMap[d].canteen/maxVal*chartH:0;
+        svg+='<rect x="'+x+'" y="'+(chartH-gH-cH)+'" width="'+barW+'" height="'+cH+'" fill="var(--accent2,#f59e0b)" rx="2"/>';
+        svg+='<rect x="'+x+'" y="'+(chartH-gH)+'" width="'+barW+'" height="'+gH+'" fill="var(--felt)" rx="2"/>';
+        if(days.length<=14) svg+='<text x="'+(x+barW/2)+'" y="'+(chartH+14)+'" text-anchor="middle" font-size="9" fill="var(--muted)">'+d.slice(5)+'</text>';
+      });
+      svg+='</svg>';
+      var legend=el('div',''); legend.style.cssText='text-align:center;font-size:11px;color:var(--muted);margin-bottom:14px;';
+      legend.innerHTML='<span style="display:inline-block;width:10px;height:10px;background:var(--felt);border-radius:2px;margin-right:3px;vertical-align:middle;"></span> Games &nbsp;&nbsp;<span style="display:inline-block;width:10px;height:10px;background:var(--accent2,#f59e0b);border-radius:2px;margin-right:3px;vertical-align:middle;"></span> Canteen';
+      var chartDiv=el('div','',svg);
+      chartDiv.style.overflowX='auto';
+      cw.appendChild(chartDiv);
+      cw.appendChild(legend);
+    }
+
+    /* --- Station usage ranking --- */
+    var stationMap={};
+    sales.forEach(function(s){
+      if(!stationMap[s.station]) stationMap[s.station]={count:0,rev:0,mins:0};
+      stationMap[s.station].count++;
+      stationMap[s.station].rev+=s.total;
+      stationMap[s.station].mins+=s.duration/60;
+    });
+    var stArr=Object.keys(stationMap).map(function(k){return {name:k,count:stationMap[k].count,rev:stationMap[k].rev,mins:stationMap[k].mins};}).sort(function(a,b){return b.rev-a.rev;});
+    if(stArr.length){
+      cw.appendChild(el('h3','','<b style="font-size:14px;">Station usage</b>'));
+      var maxSt=stArr[0].rev||1;
+      stArr.forEach(function(s){
+        var pct=Math.round(s.rev/maxSt*100);
+        var row=el('div','','<div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:2px;"><span>'+s.name+' ('+s.count+' sessions)</span><span>'+fmtMoney(s.rev)+'</span></div>'+
+          '<div style="background:var(--border);border-radius:4px;height:8px;margin-bottom:8px;"><div style="background:var(--felt);border-radius:4px;height:8px;width:'+pct+'%;"></div></div>');
+        cw.appendChild(row);
+      });
+    }
+
+    /* --- Top canteen items --- */
+    var itemMap={};
+    sales.forEach(function(s){
+      var orders=fbArr(s.orders)||[];
+      orders.forEach(function(o){
+        var key=o.name||o.pid;
+        if(!itemMap[key]) itemMap[key]={name:o.name||'?',qty:0,rev:0};
+        itemMap[key].qty+=o.qty;
+        itemMap[key].rev+=(o.price||0)*o.qty;
+      });
+    });
+    var items=Object.keys(itemMap).map(function(k){return itemMap[k];}).sort(function(a,b){return b.rev-a.rev;}).slice(0,10);
+    if(items.length){
+      cw.appendChild(el('h3','','<b style="font-size:14px;">Top canteen items</b>'));
+      items.forEach(function(item){
+        cw.appendChild(el('div','cp-list-item','<div>'+item.name+'<div class="cp-sub">Sold: '+item.qty+' units</div></div><span class="cp-tag">'+fmtMoney(item.rev)+'</span>'));
+      });
+    }
+
+    /* --- Hourly heatmap --- */
+    var hourMap=new Array(24);
+    for(var h=0;h<24;h++) hourMap[h]=0;
+    sales.forEach(function(s){ var hr=new Date(s.start||s.end).getHours(); hourMap[hr]++; });
+    var maxHr=Math.max.apply(null,hourMap)||1;
+    cw.appendChild(el('h3','','<b style="font-size:14px;">Peak hours (sessions started)</b>'));
+    var heatSvg='<svg width="'+Math.min(600,window.innerWidth-40)+'" height="50" style="display:block;margin:0 auto 14px;">';
+    var cellW=Math.floor(Math.min(600,window.innerWidth-40)/24);
+    for(var h=0;h<24;h++){
+      var intensity=hourMap[h]/maxHr;
+      var g=Math.round(255-intensity*200);
+      var color=intensity>0?'rgb('+Math.round(30+intensity*70)+','+g+','+Math.round(50+intensity*50)+')':'var(--border)';
+      heatSvg+='<rect x="'+(h*cellW)+'" y="0" width="'+(cellW-1)+'" height="30" fill="'+color+'" rx="3"/>';
+      heatSvg+='<text x="'+(h*cellW+cellW/2)+'" y="44" text-anchor="middle" font-size="9" fill="var(--muted)">'+(h%3===0?(h>12?h-12+'p':h+'a'):' ')+'</text>';
+    }
+    heatSvg+='</svg>';
+    var heatDiv=el('div','',heatSvg); heatDiv.style.overflowX='auto';
+    cw.appendChild(heatDiv);
+
+    /* --- Canteen profit (if cost prices set) --- */
+    var canteenProfit=0, canteenCost=0, canteenRev=0;
+    sales.forEach(function(s){
+      var orders=fbArr(s.orders)||[];
+      orders.forEach(function(o){
+        var prod=state.products.find(function(x){return x.id===o.pid;});
+        var cost=prod?prod.costPrice||0:0;
+        canteenCost+=cost*o.qty;
+        canteenRev+=(o.price||0)*o.qty;
+      });
+    });
+    canteenProfit=canteenRev-canteenCost;
+    if(canteenRev>0){
+      cw.appendChild(el('h3','','<b style="font-size:14px;">Canteen profitability</b>'));
+      var pm=el('div','cp-metrics');
+      pm.appendChild(el('div','cp-metric','<b>'+fmtMoney(canteenRev)+'</b><span>Canteen revenue</span>'));
+      pm.appendChild(el('div','cp-metric','<b>'+fmtMoney(canteenCost)+'</b><span>Cost of goods</span>'));
+      pm.appendChild(el('div','cp-metric','<b style="color:'+(canteenProfit>=0?'var(--ok)':'var(--danger)')+';">'+fmtMoney(canteenProfit)+'</b><span>Canteen profit</span>'));
+      pm.appendChild(el('div','cp-metric','<b>'+Math.round(canteenProfit/(canteenRev||1)*100)+'%</b><span>Margin</span>'));
+      cw.appendChild(pm);
+    }
+  }
+  renderReportCharts();
+}
+
+var DENOMS=[5000,1000,500,100,50,20,10];
+function cashFromSalesSince(ts){
+  return state.sales.filter(function(s){return s.end>=ts;}).reduce(function(a,s){return a+s.cash;},0);
+}
+function onlineFromSalesSince(ts){
+  return state.sales.filter(function(s){return s.end>=ts;}).reduce(function(a,s){return a+s.online;},0);
+}
+function registerCashDeductions(){
+  return state.register.current.entries.filter(function(e){return e.mode==='cash';}).reduce(function(a,e){return a+e.amount;},0);
+}
+function registerOnlineDeductions(){
+  return state.register.current.entries.filter(function(e){return e.mode==='online';}).reduce(function(a,e){return a+e.amount;},0);
+}
+
+function renderFinance(body){
+  var reg=state.register;
+  if(!reg.current){
+    body.appendChild(el('h2','cp-h2','Cash & online register'));
+    body.appendChild(el('div','cp-note','Register band hai. Naya session shuru karne ke liye opening balance set karein.'));
+    var last=reg.history.length ? reg.history[reg.history.length-1] : null;
+    if(last){
+      var lastBtn=el('button','cp-btn','Use last closing — Cash '+fmtMoney(last.cashPhysicalClosing)+' · Online '+fmtMoney(last.onlineClosing));
+      lastBtn.style.cssText='width:100%;margin-bottom:8px;';
+      lastBtn.onclick=function(){ openRegisterStart(last.cashPhysicalClosing,last.onlineClosing); };
+      body.appendChild(lastBtn);
+    }
+    var manualBtn=el('button','cp-btn ghost','Manual opening entry');
+    manualBtn.style.cssText='width:100%;margin-bottom:14px;';
+    manualBtn.onclick=function(){ openRegisterStart(0,0); };
+    body.appendChild(manualBtn);
+    if(reg.history.length){
+      body.appendChild(el('h2','cp-h2','Past closings'));
+      reg.history.slice().reverse().slice(0,10).forEach(function(h){
+        var varTxt = h.variance===0 ? 'matched' : (h.variance>0?('over by '+fmtMoney(h.variance)):('short by '+fmtMoney(Math.abs(h.variance))));
+        var item=el('div','cp-list-item','<div>'+new Date(h.closedAt).toLocaleString()+
+          '<div class="cp-sub">Cash closing '+fmtMoney(h.cashPhysicalClosing)+' · Online '+fmtMoney(h.onlineClosing)+' · '+varTxt+'</div></div>');
+        body.appendChild(item);
+      });
+    }
+    return;
+  }
+  var cashFromSales=cashFromSalesSince(reg.current.openedAt);
+  var onlineFromSales=onlineFromSalesSince(reg.current.openedAt);
+  var cashDeduct=registerCashDeductions();
+  var onlineDeduct=registerOnlineDeductions();
+  var cashBalance=reg.current.cashOpening+cashFromSales-cashDeduct;
+  var onlineBalance=reg.current.onlineOpening+onlineFromSales-onlineDeduct;
+
+  body.appendChild(el('h2','cp-h2','Cash & online register'));
+  body.appendChild(el('div','cp-note','Session opened '+new Date(reg.current.openedAt).toLocaleString()));
+  var m=el('div','cp-metrics');
+  m.appendChild(el('div','cp-metric','<b>'+fmtMoney(cashBalance)+'</b><span>Current cash balance</span>'));
+  m.appendChild(el('div','cp-metric','<b>'+fmtMoney(onlineBalance)+'</b><span>Current online balance</span>'));
+  m.appendChild(el('div','cp-metric','<b>'+fmtMoney(reg.current.cashOpening)+' / '+fmtMoney(reg.current.onlineOpening)+'</b><span>Opening (cash / online)</span>'));
+  m.appendChild(el('div','cp-metric','<b>'+fmtMoney(cashFromSales)+' / '+fmtMoney(onlineFromSales)+'</b><span>From sales (cash / online)</span>'));
+  body.appendChild(m);
+
+  var actionRow=el('div','cp-cardbtns');
+  var expBtn=el('button','cp-btn ghost','+ Expense / purchase');
+  expBtn.onclick=openRegisterExpense;
+  var wdBtn=el('button','cp-btn ghost','+ Owner withdrawal');
+  if(role!=='admin' && !state.settings.staffCanWithdraw){ wdBtn.style.display='none'; }
+  wdBtn.onclick=openRegisterWithdrawal;
+  var closeBtn=el('button','cp-btn danger','Close register (day close)');
+  closeBtn.style.flex='1 1 100%';
+  closeBtn.onclick=openRegisterClose;
+  actionRow.appendChild(expBtn); actionRow.appendChild(wdBtn); actionRow.appendChild(closeBtn);
+  body.appendChild(actionRow);
+
+  if(reg.current.entries.length){
+    body.appendChild(el('h2','cp-h2','Today\'s entries'));
+    reg.current.entries.slice().reverse().forEach(function(e){
+      var typeLabel = e.type==='withdrawal' ? 'Owner withdrawal' : (e.type==='purchase'?'Purchase':'Expense');
+      var item=el('div','cp-list-item','<div>'+typeLabel+(e.note?(' — '+e.note):'')+'<div class="cp-sub">'+e.mode+' · '+new Date(e.createdAt).toLocaleTimeString()+'</div></div>'+
+        '<span class="cp-tag" style="color:var(--danger);background:#FBEAEA;">-'+fmtMoney(e.amount)+'</span>');
+      body.appendChild(item);
+    });
+  }
+}
+
+function openRegisterStart(cashDefault,onlineDefault){
+  showModal('Open register',
+    '<div class="cp-field"><label>Opening cash (PKR)</label><input id="mRegCash" type="number" value="'+Math.round(cashDefault)+'"></div>'+
+    '<div class="cp-field"><label>Opening online (PKR)</label><input id="mRegOnline" type="number" value="'+Math.round(onlineDefault)+'"></div>',
+    function(){
+      var cash=+document.getElementById('mRegCash').value||0;
+      var online=+document.getElementById('mRegOnline').value||0;
+      state.register.current={openedAt:Date.now(),cashOpening:cash,onlineOpening:online,entries:[]};
+      saveState(); closeModal(); render();
+    },'Open register');
+}
+
+function openRegisterExpense(){
+  showModal('Add expense / purchase',
+    '<div class="cp-field"><label>Type</label><select id="mExpType"><option value="expense">Expense</option><option value="purchase">Purchase / inventory</option></select></div>'+
+    '<div class="cp-field"><label>Amount (PKR)</label><input id="mExpAmt" type="number"></div>'+
+    '<div class="cp-field"><label>Paid from</label><select id="mExpMode"><option value="cash">Cash</option><option value="online">Online</option></select></div>'+
+    '<div class="cp-field"><label>Note</label><input id="mExpNote" placeholder="e.g. canteen stock, electricity bill"></div>',
+    function(){
+      var amt=+document.getElementById('mExpAmt').value||0;
+      if(amt<=0) return;
+      state.register.current.entries.push({id:'e'+Date.now(),type:document.getElementById('mExpType').value,amount:amt,
+        mode:document.getElementById('mExpMode').value,note:document.getElementById('mExpNote').value.trim(),by:role,createdAt:Date.now()});
+      saveState(); closeModal(); render();
+    },'Save entry');
+}
+
+function openRegisterWithdrawal(){
+  showModal('Owner withdrawal',
+    '<div class="cp-sub" style="margin-bottom:10px;">Owner ka password chahiye is entry ko authorize karne ke liye.</div>'+
+    '<div class="cp-field"><label>Amount (PKR)</label><input id="mWdAmt" type="number"></div>'+
+    '<div class="cp-field"><label>From</label><select id="mWdMode"><option value="cash">Cash</option><option value="online">Online</option></select></div>'+
+    '<div class="cp-field"><label>Note (optional)</label><input id="mWdNote"></div>'+
+    '<div class="cp-field"><label>Owner password</label><input id="mWdPass" type="password"></div>',
+    function(){
+      var pass=document.getElementById('mWdPass').value;
+      if(pass!==state.settings.ownerPassword){ alert('Galat owner password.'); return; }
+      var amt=+document.getElementById('mWdAmt').value||0;
+      if(amt<=0) return;
+      state.register.current.entries.push({id:'e'+Date.now(),type:'withdrawal',amount:amt,
+        mode:document.getElementById('mWdMode').value,note:document.getElementById('mWdNote').value.trim()||'Owner withdrawal',by:'Owner',createdAt:Date.now()});
+      saveState(); closeModal(); render();
+    },'Confirm withdrawal');
+}
+
+function openRegisterClose(){
+  var reg=state.register;
+  var cashFromSales=cashFromSalesSince(reg.current.openedAt);
+  var onlineFromSales=onlineFromSalesSince(reg.current.openedAt);
+  var cashDeduct=registerCashDeductions();
+  var onlineDeduct=registerOnlineDeductions();
+  var cashSystem=reg.current.cashOpening+cashFromSales-cashDeduct;
+  var onlineSystem=reg.current.onlineOpening+onlineFromSales-onlineDeduct;
+
+  var denomHtml='<div class="cp-sub" style="margin-bottom:8px;">Physical cash count — denomination-wise</div><div class="cp-split" style="flex-wrap:wrap;">';
+  DENOMS.forEach(function(d){
+    denomHtml+='<div class="cp-field" style="flex:1 1 30%;min-width:88px;"><label>Rs. '+d+' notes</label><input class="mDenom" data-d="'+d+'" type="number" min="0" value="0"></div>';
+  });
+  denomHtml+='</div><div class="cp-sub" id="mDenomTotal" style="font-weight:600;margin:8px 0;">Physical total: Rs. 0</div>';
+
+  var html='<div class="cp-bill">'+
+    '<div class="line"><span>System cash balance</span><span>'+fmtMoney(cashSystem)+'</span></div>'+
+    '<div class="line"><span>System online balance</span><span>'+fmtMoney(onlineSystem)+'</span></div></div>'+
+    denomHtml+
+    '<div class="cp-field"><label>Online closing (PKR, editable if needed)</label><input id="mOnlineClose" type="number" value="'+Math.round(onlineSystem)+'"></div>'+
+    '<div class="cp-sub" id="mVarianceLine" style="font-weight:600;"></div>';
+
+  showModal('Close register — day close',html,function(){
+    var total=0;
+    document.querySelectorAll('.mDenom').forEach(function(inp){ total+=(+inp.value||0)*(+inp.getAttribute('data-d')); });
+    var onlineClose=+document.getElementById('mOnlineClose').value||0;
+    var variance=total-cashSystem;
+    var denomCounts={};
+    document.querySelectorAll('.mDenom').forEach(function(inp){ denomCounts[inp.getAttribute('data-d')]=+inp.value||0; });
+    state.register.history.push({id:'r'+Date.now(),openedAt:reg.current.openedAt,closedAt:Date.now(),
+      cashOpening:reg.current.cashOpening,onlineOpening:reg.current.onlineOpening,
+      cashFromSales:cashFromSales,onlineFromSales:onlineFromSales,
+      cashDeductions:cashDeduct,onlineDeductions:onlineDeduct,
+      cashSystemBalance:cashSystem,onlineSystemBalance:onlineSystem,
+      cashPhysicalClosing:total,onlineClosing:onlineClose,variance:variance,
+      denominations:denomCounts,entries:reg.current.entries});
+    state.register.current=null;
+    saveState(); closeModal(); render();
+  },'Confirm closing');
+
+  function recalc(){
+    var total=0;
+    document.querySelectorAll('.mDenom').forEach(function(inp){ total+=(+inp.value||0)*(+inp.getAttribute('data-d')); });
+    var totalEl=document.getElementById('mDenomTotal');
+    if(totalEl) totalEl.textContent='Physical total: '+fmtMoney(total);
+    var variance=total-cashSystem;
+    var vEl=document.getElementById('mVarianceLine');
+    if(!vEl) return;
+    if(variance===0) vEl.innerHTML='Matched — no difference.';
+    else if(variance>0) vEl.innerHTML='<span style="color:var(--ok);">Over by '+fmtMoney(variance)+'</span>';
+    else vEl.innerHTML='<span style="color:var(--danger);">Short by '+fmtMoney(Math.abs(variance))+'</span>';
+  }
+  document.querySelectorAll('.mDenom').forEach(function(inp){ inp.addEventListener('input',recalc); });
+  recalc();
+}
+
+function renderCustomerTabs(body){
+  var row=el('div','cp-row');
+  row.appendChild(el('h2','cp-h2','Customer Tabs'));
+  var addBtn=el('button','cp-btn brass','+ Open new tab');
+  addBtn.onclick=openNewCustomerTab;
+  row.appendChild(addBtn);
+  body.appendChild(row);
+  body.appendChild(el('div','cp-note','Jab koi customer multiple tables pe khelta hai (loose game — loser pays), uska tab kholein. On/Off pe game us tab se link ho jayega. Customer jab jayega tab settle karein — paid-off games table ke bill se minus ho jayengi.'));
+
+  var openT=state.customerTabs.filter(function(ct){return ct.status==='open';});
+  var settledT=state.customerTabs.filter(function(ct){return ct.status==='settled';});
+
+  if(openT.length){
+    body.appendChild(el('h2','cp-h2','Open tabs'));
+    openT.forEach(function(ct){
+      var totalCost=ct.games.reduce(function(a,g){return a+g.cost;},0);
+      var card=el('div','cp-card'); card.style.marginBottom='10px';
+      card.innerHTML='<div class="cp-tname">'+ct.name+' <span class="cp-pill on">Open</span></div>'+
+        '<div class="cp-sub">'+(ct.phone?'Phone: '+ct.phone+' · ':'')+'Games: '+ct.games.length+' · Running total: '+fmtMoney(totalCost)+'</div>';
+      if(ct.games.length){
+        var gamesBox=el('div','cp-items');
+        ct.games.forEach(function(g,i){
+          gamesBox.appendChild(el('div','cp-item-row','<span>'+(i+1)+'. '+g.stationName+' — '+g.gameName+'</span><span>'+fmtDur(g.durationSec)+' · '+fmtMoney(g.cost)+'</span>'));
+        });
+        card.appendChild(gamesBox);
+      }
+      var btns=el('div','cp-cardbtns');
+      var settleBtn=el('button','cp-btn','Settle tab');
+      settleBtn.onclick=(function(tabId){ return function(){ openSettleCustomerTab(tabId); }; })(ct.id);
+      var addGameBtn=el('button','cp-btn ghost','+ Link game manually');
+      addGameBtn.onclick=(function(tabId){ return function(){ openManualLinkGame(tabId); }; })(ct.id);
+      btns.appendChild(addGameBtn); btns.appendChild(settleBtn);
+      card.appendChild(btns);
+      body.appendChild(card);
+    });
+  }
+
+  if(settledT.length){
+    body.appendChild(el('h2','cp-h2','Settled tabs'));
+    settledT.slice().reverse().forEach(function(ct){
+      var card=el('div','cp-card'); card.style.marginBottom='10px';
+      card.innerHTML='<div class="cp-tname">'+ct.name+' <span class="cp-pill idle">Settled</span></div>'+
+        '<div class="cp-sub">Paid: '+fmtMoney(ct.totalPaid)+' · Games: '+ct.games.length+' · Settled: '+new Date(ct.settledAt).toLocaleString()+'</div>';
+      if(ct.games.length){
+        var gamesBox=el('div','cp-items');
+        ct.games.forEach(function(g,i){
+          gamesBox.appendChild(el('div','cp-item-row','<span>'+(i+1)+'. '+g.stationName+' — '+g.gameName+'</span><span>'+fmtDur(g.durationSec)+' · '+fmtMoney(g.cost)+'</span>'));
+        });
+        card.appendChild(gamesBox);
+      }
+      body.appendChild(card);
+    });
+  }
+
+  if(!state.customerTabs.length) body.appendChild(el('div','cp-empty','Koi customer tab nahi khula abhi. "+ Open new tab" se shuru karein.'));
+}
+
+function openNewCustomerTab(){
+  showModal('Open customer tab',
+    '<div class="cp-field"><label>Customer name</label><input id="mTabName" placeholder="e.g. Mr. Daniyal"></div>'+
+    '<div class="cp-field"><label>Phone (optional)</label><input id="mTabPhone" placeholder="03xx-xxxxxxx"></div>',
+    function(){
+      var name=document.getElementById('mTabName').value.trim();
+      if(!name) return;
+      var phone=document.getElementById('mTabPhone').value.trim();
+      state.customerTabs.push({id:'ct'+Date.now(),name:name,phone:phone,status:'open',games:[],settledAt:null,totalPaid:0});
+      saveState(); closeModal(); render();
+    },'Open tab');
+}
+
+function openSettleCustomerTab(tabId){
+  var ct=state.customerTabs.find(function(t){return t.id===tabId;});
+  if(!ct) return;
+  var totalCost=ct.games.reduce(function(a,g){return a+g.cost;},0);
+  var breakdownHtml='';
+  ct.games.forEach(function(g,i){
+    breakdownHtml+='<div class="line"><span>'+(i+1)+'. '+g.stationName+' — '+g.gameName+'</span><span>'+fmtDur(g.durationSec)+' · '+fmtMoney(g.cost)+'</span></div>';
+  });
+  var html='<div class="cp-bill">'+
+    '<div class="line"><span>Customer</span><span>'+ct.name+'</span></div>'+
+    '<div class="line"><span>Total games</span><span>'+ct.games.length+'</span></div>'+
+    breakdownHtml+
+    '<hr><div class="line" style="font-weight:600;font-size:15px;"><span>Total payable</span><span>'+fmtMoney(totalCost)+'</span></div></div>'+
+    '<div class="cp-split" style="margin-top:14px;"><div class="cp-field"><label>Cash (PKR)</label><input id="mTabCash" type="number" value="'+Math.round(totalCost)+'"></div>'+
+    '<div class="cp-field"><label>Online (PKR)</label><input id="mTabOnline" type="number" value="0"></div></div>';
+
+  showModal('Settle tab — '+ct.name,html,function(){
+    var cash=+document.getElementById('mTabCash').value||0;
+    var online=+document.getElementById('mTabOnline').value||0;
+    ct.status='settled';
+    ct.settledAt=Date.now();
+    ct.totalPaid=cash+online;
+    ct.games.forEach(function(g){
+      var station=state.stations.find(function(s){return s.id===g.stationId;});
+      if(station && station.gameLog){
+        var match=station.gameLog.find(function(gl){return gl.customerTabId===ct.id && gl.startedAt===g.startedAt;});
+        if(match) match.paidOffByTab=true;
+      }
+    });
+    var remaining=Math.round(Math.max(0,totalCost-cash-online));
+    if(remaining>=1){
+      requestOrGrantKhata(ct.name,ct.phone||'',remaining,'Customer tab settle — remaining balance');
+    }
+    saveState(); closeModal(); render();
+    if(remaining>=1) alert(ct.name+' ka tab settle hua — Rs. '+remaining+' udhaar khata mein add hua.');
+    else alert(ct.name+' ka tab fully settled — '+fmtMoney(cash+online)+' received. Ye amount in tables ke bills se minus ho jayega.');
+  },'Settle & close tab');
+}
+
+function openManualLinkGame(tabId){
+  var ct=state.customerTabs.find(function(t){return t.id===tabId;});
+  if(!ct) return;
+  var runningStations=state.stations.filter(function(s){return s.status==='running' && s.gameLog.length>0;});
+  if(!runningStations.length){ alert('Koi table chal nahi raha jis pe game log ho.'); return; }
+  var html='<div class="cp-sub" style="margin-bottom:10px;">Select a completed game from a running table to link to '+ct.name+'\'s tab:</div>';
+  runningStations.forEach(function(st){
+    st.gameLog.forEach(function(g,i){
+      if(g.customerTabId) return;
+      var cost=costForDuration(st,rateAt(st,new Date(g.startedAt)),g.durationSec);
+      html+='<div class="cp-list-item" style="cursor:pointer;" data-sid="'+st.id+'" data-gi="'+i+'">'+
+        '<div>'+st.name+' — Game '+(i+1)+' ('+g.name+')<div class="cp-sub">'+fmtDur(g.durationSec)+' · '+fmtMoney(cost)+'</div></div>'+
+        '<input type="checkbox" class="mLinkChk" data-sid="'+st.id+'" data-gi="'+i+'" style="width:auto;"></div>';
+    });
+  });
+  showModal('Link games to '+ct.name+'\'s tab',html,function(){
+    document.querySelectorAll('.mLinkChk:checked').forEach(function(chk){
+      var sid=chk.getAttribute('data-sid');
+      var gi=+chk.getAttribute('data-gi');
+      var station=state.stations.find(function(s){return s.id===sid;});
+      if(!station) return;
+      var g=station.gameLog[gi];
+      if(!g || g.customerTabId) return;
+      var cost=costForDuration(station,rateAt(station,new Date(g.startedAt)),g.durationSec);
+      g.customerTabId=ct.id;
+      ct.games.push({stationId:station.id,stationName:station.name,gameName:g.name,durationSec:g.durationSec,cost:cost,startedAt:g.startedAt,endedAt:g.endedAt,gameIndex:gi});
+    });
+    saveState(); closeModal(); render();
+  },'Link selected games');
+}
+
+function renderAdmin(body){
+  var row=el('div','cp-row');
+  row.appendChild(el('h2','cp-h2','Admin — rate configuration'));
+  var addBtn=el('button','cp-btn brass','+ Add table');
+  addBtn.onclick=openAddStation;
+  row.appendChild(addBtn);
+  body.appendChild(row);
+
+  var settingsCard=el('div','cp-card');
+  settingsCard.style.marginBottom='14px';
+  settingsCard.innerHTML='<div class="cp-tname" style="margin-bottom:8px;">Club settings</div>';
+  var approvalRow=el('label','',''); approvalRow.style.cssText='display:flex;align-items:center;gap:8px;font-size:13px;margin-bottom:10px;cursor:pointer;';
+  var chk=el('input','',''); chk.setAttribute('type','checkbox'); chk.style.width='auto'; chk.id='adminKhataApproval';
+  chk.checked=!!state.settings.khataNeedsApproval;
+  approvalRow.appendChild(chk);
+  approvalRow.appendChild(document.createTextNode('Staff must get admin approval before giving khata/udhaar'));
+  settingsCard.appendChild(approvalRow);
+  var bookApproveRow=el('label','',''); bookApproveRow.style.cssText='display:flex;align-items:center;gap:8px;font-size:13px;margin-bottom:10px;cursor:pointer;';
+  var chk2=el('input','',''); chk2.setAttribute('type','checkbox'); chk2.style.width='auto'; chk2.id='adminStaffBookingApprove';
+  chk2.checked=!!state.settings.staffCanApproveBookings;
+  bookApproveRow.appendChild(chk2);
+  bookApproveRow.appendChild(document.createTextNode('Staff can approve/reject bookings'));
+  settingsCard.appendChild(bookApproveRow);
+  var wdApproveRow=el('label','',''); wdApproveRow.style.cssText='display:flex;align-items:center;gap:8px;font-size:13px;margin-bottom:10px;cursor:pointer;';
+  var chk3=el('input','',''); chk3.setAttribute('type','checkbox'); chk3.style.width='auto'; chk3.id='adminStaffWithdraw';
+  chk3.checked=!!state.settings.staffCanWithdraw;
+  wdApproveRow.appendChild(chk3);
+  wdApproveRow.appendChild(document.createTextNode('Staff can make owner withdrawals'));
+  settingsCard.appendChild(wdApproveRow);
+  var pinRow=el('div','cp-field'); pinRow.style.marginBottom='0';
+  pinRow.innerHTML='<label>Admin PIN (needed to switch into admin mode)</label>';
+  var pinInput=el('input','',''); pinInput.value=state.settings.adminPin; pinInput.setAttribute('maxlength','8'); pinInput.id='adminPin';
+  pinRow.appendChild(pinInput);
+  settingsCard.appendChild(pinRow);
+  var advRow=el('div','cp-field'); advRow.style.marginTop='10px'; advRow.style.marginBottom='0';
+  advRow.innerHTML='<label>Minimum booking advance (PKR) — shown to customers on the booking page</label>';
+  var advInput=el('input','',''); advInput.setAttribute('type','number'); advInput.value=state.settings.minBookingAdvance; advInput.id='adminMinAdvance';
+  advRow.appendChild(advInput);
+  settingsCard.appendChild(advRow);
+  var ownerRow=el('div','cp-field'); ownerRow.style.marginTop='10px'; ownerRow.style.marginBottom='0';
+  ownerRow.innerHTML='<label>Owner password (needed for register withdrawals)</label>';
+  var ownerInput=el('input','',''); ownerInput.value=state.settings.ownerPassword; ownerInput.setAttribute('type','text'); ownerInput.id='adminOwnerPass';
+  ownerRow.appendChild(ownerInput);
+  settingsCard.appendChild(ownerRow);
+  /* Login credentials section */
+  var credTitle=el('div','cp-tname',''); credTitle.style.cssText='margin-top:16px;margin-bottom:8px;';
+  credTitle.textContent='Login Credentials';
+  settingsCard.appendChild(credTitle);
+  var seRow=el('div','cp-field'); seRow.style.marginBottom='0';
+  seRow.innerHTML='<label>Staff Email</label>';
+  var seInput=el('input','',''); seInput.value=state.settings.staffEmail; seInput.id='adminStaffEmail';
+  seRow.appendChild(seInput);
+  settingsCard.appendChild(seRow);
+  var spRow=el('div','cp-field'); spRow.style.marginTop='8px'; spRow.style.marginBottom='0';
+  spRow.innerHTML='<label>Staff Password</label>';
+  var spInput=el('input','',''); spInput.value=state.settings.staffPass; spInput.id='adminStaffPass';
+  spRow.appendChild(spInput);
+  settingsCard.appendChild(spRow);
+  var aeRow=el('div','cp-field'); aeRow.style.marginTop='8px'; aeRow.style.marginBottom='0';
+  aeRow.innerHTML='<label>Admin Email</label>';
+  var aeInput=el('input','',''); aeInput.value=state.settings.adminEmail; aeInput.id='adminAdminEmail';
+  aeRow.appendChild(aeInput);
+  settingsCard.appendChild(aeRow);
+  var apRow=el('div','cp-field'); apRow.style.marginTop='8px'; apRow.style.marginBottom='0';
+  apRow.innerHTML='<label>Admin Password</label>';
+  var apInput=el('input','',''); apInput.value=state.settings.adminPass; apInput.id='adminAdminPass';
+  apRow.appendChild(apInput);
+  settingsCard.appendChild(apRow);
+
+  /* Club operating hours */
+  var hoursTitle=el('div','cp-tname',''); hoursTitle.style.cssText='margin-top:16px;margin-bottom:8px;';
+  hoursTitle.textContent='Club Operating Hours';
+  settingsCard.appendChild(hoursTitle);
+  var h24Row=el('label','',''); h24Row.style.cssText='display:flex;align-items:center;gap:8px;font-size:13px;margin-bottom:10px;cursor:pointer;';
+  var chk24=el('input','',''); chk24.setAttribute('type','checkbox'); chk24.style.width='auto'; chk24.id='adminClub24h';
+  chk24.checked=!!state.settings.club24h;
+  h24Row.appendChild(chk24);
+  h24Row.appendChild(document.createTextNode('24/7 Open (no time restriction)'));
+  settingsCard.appendChild(h24Row);
+  var hoursWrap=el('div',''); hoursWrap.id='clubHoursWrap';
+  hoursWrap.style.display=state.settings.club24h?'none':'block';
+  var openRow=el('div','cp-field'); openRow.style.marginBottom='8px';
+  openRow.innerHTML='<label>Opening time</label>';
+  var openInp=el('input','',''); openInp.setAttribute('type','time'); openInp.value=state.settings.clubOpenTime; openInp.id='adminClubOpen';
+  openRow.appendChild(openInp);
+  hoursWrap.appendChild(openRow);
+  var closeRow=el('div','cp-field'); closeRow.style.marginBottom='0';
+  closeRow.innerHTML='<label>Closing time</label>';
+  var closeInp=el('input','',''); closeInp.setAttribute('type','time'); closeInp.value=state.settings.clubCloseTime; closeInp.id='adminClubClose';
+  closeRow.appendChild(closeInp);
+  hoursWrap.appendChild(closeRow);
+  settingsCard.appendChild(hoursWrap);
+  chk24.onchange=function(){ hoursWrap.style.display=chk24.checked?'none':'block'; };
+
+  var saveBtn=el('button','cp-btn brass','Save Changes');
+  saveBtn.style.cssText='width:100%;margin-top:14px;';
+  saveBtn.onclick=function(){
+    state.settings.khataNeedsApproval=document.getElementById('adminKhataApproval').checked;
+    state.settings.staffCanApproveBookings=document.getElementById('adminStaffBookingApprove').checked;
+    state.settings.staffCanWithdraw=document.getElementById('adminStaffWithdraw').checked;
+    state.settings.adminPin=document.getElementById('adminPin').value||'1234';
+    state.settings.minBookingAdvance=+document.getElementById('adminMinAdvance').value||0;
+    state.settings.ownerPassword=document.getElementById('adminOwnerPass').value||'owner123';
+    state.settings.staffEmail=document.getElementById('adminStaffEmail').value||'staff@royalsnooker.com';
+    state.settings.staffPass=document.getElementById('adminStaffPass').value||'staff@123';
+    state.settings.adminEmail=document.getElementById('adminAdminEmail').value||'admin@royalsnooker.com';
+    state.settings.adminPass=document.getElementById('adminAdminPass').value||'admin@1234';
+    state.settings.club24h=document.getElementById('adminClub24h').checked;
+    state.settings.clubOpenTime=document.getElementById('adminClubOpen').value||'10:00';
+    state.settings.clubCloseTime=document.getElementById('adminClubClose').value||'23:00';
+    saveState();
+    showToast('Settings saved ✓');
+  };
+  settingsCard.appendChild(saveBtn);
+  body.appendChild(settingsCard);
+
+  var pending=state.khataRequests.filter(function(r){return r.status==='pending';});
+  if(pending.length){
+    body.appendChild(el('h2','cp-h2','Pending khata approvals'));
+    pending.forEach(function(r){
+      var item=el('div','cp-list-item','<div>'+r.name+'<div class="cp-sub">'+r.context+' · '+new Date(r.createdAt).toLocaleTimeString()+'</div></div>'+
+        '<span class="cp-tag">'+fmtMoney(r.amount)+'</span>');
+      var btnWrap=el('div','');
+      var okBtn=el('button','cp-btn','Approve');
+      okBtn.style.padding='6px 10px'; okBtn.style.fontSize='12px'; okBtn.style.marginLeft='8px';
+      okBtn.onclick=function(){
+        findOrCreateCustomer(r.name,r.phone).given+=r.amount;
+        r.status='approved';
+        state.sales.forEach(function(s){ if(s.customer===r.name && s.khataStatus==='pending') s.khataStatus='approved'; });
+        saveState(); render();
+      };
+      var noBtn=el('button','cp-btn danger','Reject');
+      noBtn.style.padding='6px 10px'; noBtn.style.fontSize='12px'; noBtn.style.marginLeft='6px';
+      noBtn.onclick=function(){
+        r.status='rejected';
+        state.sales.forEach(function(s){ if(s.customer===r.name && s.khataStatus==='pending') s.khataStatus='rejected'; });
+        saveState(); render();
+      };
+      btnWrap.appendChild(okBtn); btnWrap.appendChild(noBtn);
+      item.appendChild(btnWrap);
+      body.appendChild(item);
+    });
+  }
+
+  body.appendChild(el('h2','cp-h2','Table rates'));
+  body.appendChild(el('div','cp-note','Set per-hour and per-minute rates for each table. Choose "Both" to let staff pick the billing mode when a session starts.'));
+  if(!state.stations.length){ body.appendChild(el('div','cp-empty','No tables configured yet.')); return; }
+  state.stations.forEach(function(st){
+    var modeLabel = st.mode==='both'?'Hour or minute':(st.mode==='min'?'Per minute':'Per hour');
+    var item=el('div','cp-list-item','<div>'+st.name+' <span class="cp-tag">'+st.category+'</span>'+
+      '<div class="cp-sub">'+modeLabel+' · Peak '+st.peakStart+'–'+st.peakEnd+
+      (st.mode!=='min'?' · '+fmtMoney(st.regularRateHour)+'/'+fmtMoney(st.peakRateHour)+' hr':'')+
+      (st.mode!=='hour'?' · '+fmtMoney(st.regularRateMin)+'/'+fmtMoney(st.peakRateMin)+' min':'')+
+      '</div></div>');
+    var btnWrap=el('div','');
+    var editBtn=el('button','cp-btn ghost','Edit');
+    editBtn.style.marginRight='6px'; editBtn.style.padding='6px 10px'; editBtn.style.fontSize='12px';
+    editBtn.onclick=function(){ openEditStation(st.id); };
+    var delBtn=el('button','cp-btn danger','Delete');
+    delBtn.style.padding='6px 10px'; delBtn.style.fontSize='12px';
+    delBtn.onclick=function(){ deleteStation(st.id); };
+    btnWrap.appendChild(editBtn); btnWrap.appendChild(delBtn);
+    item.appendChild(btnWrap);
+    body.appendChild(item);
+  });
+}
+
+async function loadBookings(){
+  try{
+    var snap=await db.ref(branchRef('bookings')).once('value');
+    var fbData=snap.val();
+    if(fbData){
+      bookings=fbArr(fbData)||[];
+      lsSet(lsKey(LS_BOOKINGS),bookings);
+    } else {
+      bookings=fbArr(lsGet(lsKey(LS_BOOKINGS)))||[];
+    }
+  }catch(e){
+    bookings=lsGet(lsKey(LS_BOOKINGS))||[];
+  }
+}
+function saveBookings(){
+  lsSet(lsKey(LS_BOOKINGS),bookings);
+  db.ref(branchRef('bookings')).set(bookings).catch(function(){});
+}
+function waLink(phone,msg){
+  var digits=(phone||'').replace(/[^\d]/g,'');
+  if(digits.indexOf('0')===0) digits='92'+digits.slice(1);
+  else if(digits.indexOf('92')!==0) digits='92'+digits;
+  return 'https://wa.me/'+digits+'?text='+encodeURIComponent(msg);
+}
+function fmtBookingDate(dateStr){
+  if(!dateStr) return '';
+  var months=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  var d=new Date(dateStr);
+  if(isNaN(d.getTime())) return dateStr;
+  var dd=String(d.getDate()).padStart(2,'0');
+  var mmm=months[d.getMonth()];
+  var yy=String(d.getFullYear()).slice(-2);
+  return dd+'-'+mmm+'-'+yy;
+}
+function fmtBookingTime(timeStr){
+  if(!timeStr) return '';
+  var parts=timeStr.split(':');
+  var h=parseInt(parts[0])||0, m=parseInt(parts[1])||0;
+  var ap=h>=12?'PM':'AM';
+  var h12=h%12; if(h12===0) h12=12;
+  return (h12<10?'0'+h12:h12)+':'+(m<10?'0'+m:m)+' '+ap;
+}
+function bookingWaMsg(b){
+  return 'Assalam-o-Alaikum '+b.name+'!\nAap ki booking Royal Snooker Academy mein confirm ho gayi hai — '+(b.category||'table')+'\n'+fmtBookingDate(b.date)+'\n'+fmtBookingTime(b.time)+'\nShukriya';
+}
+function openAllotBooking(bookingId){
+  var bk=bookings.find(function(b){return b.id===bookingId;});
+  var idle=state.stations.filter(function(s){return s.status==='idle';});
+  if(!idle.length){ alert('Filhal koi table free nahi hai — pehle koi table khaali karein.'); return; }
+  var options=idle.map(function(s){return '<option value="'+s.id+'">'+s.name+' ('+s.category+')</option>';}).join('');
+  showModal('Allot table — '+bk.name,
+    '<div class="cp-sub" style="margin-bottom:10px;">Booking: '+(bk.category||'')+' · '+(bk.date||'')+' '+(bk.time||'')+(bk.advanceAmount?(' · Advance paid: '+fmtMoney(bk.advanceAmount)):'')+'</div>'+
+    '<div class="cp-field"><label>Select table to allot</label><select id="mAllotStation">'+options+'</select></div>'+
+    '<div class="cp-field" id="mAllotModeWrap" style="display:none;"><label>Bill this session by</label><select id="mAllotMode"><option value="min">Per minute</option><option value="hour">Per hour</option></select></div>',
+    function(){
+      var stId=document.getElementById('mAllotStation').value;
+      var st=state.stations.find(function(s){return s.id===stId;});
+      if(!st) return;
+      if(st.mode==='both'){ st.sessionMode=document.getElementById('mAllotMode').value; }
+      st.customer=bk.name;
+      st.status='running'; st.startTime=Date.now(); st.orders=[]; st.gameLog=[]; st.pausedMs=0; st.pauseStart=null;
+      st.bookingId=bk.id; st.bookingAdvance=bk.advanceAmount||0; st.bookingCustomerName=bk.name; st.bookingCustomerPhone=bk.phone||'';
+      bk.consumed=true; bk.linkedStationId=st.id;
+      /* Record advance as Online income in register */
+      if(bk.advanceAmount>0){
+        if(state.register.current){
+          state.register.current.entries.push({id:'e'+Date.now(),type:'booking-advance',amount:bk.advanceAmount,mode:'online',note:'Booking advance — '+bk.name,by:role,createdAt:Date.now()});
+        }
+      }
+      saveState(); saveBookings(); closeModal(); render();
+    },'Start & allot table');
+  var selEl=document.getElementById('mAllotStation');
+  function syncModeVisibility(){
+    var chosen=state.stations.find(function(s){return s.id===selEl.value;});
+    document.getElementById('mAllotModeWrap').style.display=(chosen && chosen.mode==='both')?'block':'none';
+  }
+  if(selEl){ selEl.onchange=syncModeVisibility; syncModeVisibility(); }
+}
+function renderBookings(body){
+  var row=el('div','cp-row');
+  row.appendChild(el('h2','cp-h2','Booking requests'));
+  var refreshBtn=el('button','cp-btn ghost','Refresh');
+  refreshBtn.onclick=function(){ loadBookings().then(render); };
+  row.appendChild(refreshBtn);
+  body.appendChild(row);
+  body.appendChild(el('div','cp-note','Customers submit these from the separate Booking page with a payment screenshot. Approve to confirm — a WhatsApp message link opens ready to send.'));
+
+  var pending=bookings.filter(function(b){return b.status==='pending';});
+  var others=bookings.filter(function(b){return b.status!=='pending';});
+
+  if(!bookings.length){ body.appendChild(el('div','cp-empty','No booking requests yet.')); return; }
+
+  function bookingCard(b){
+    var card=el('div','cp-card'); card.style.marginBottom='10px';
+    if(!b.notifRead) card.style.borderColor='var(--brass)';
+    var head=el('div','',
+      '<div class="cp-tname">'+b.name+(!b.notifRead?' <span class="cp-tag" style="color:var(--brass);background:#FBF3E4;">new</span>':'')+'</div>'+
+      '<div class="cp-cat">'+(b.category||'')+' · '+(b.date||'no date')+' '+(b.time||'')+'</div>');
+    card.appendChild(head);
+    card.appendChild(el('div','cp-sub','Phone: '+b.phone+(b.notes?(' · '+b.notes):'')+(b.advanceAmount?(' · Advance: '+fmtMoney(b.advanceAmount)):'')));
+    if(b.screenshot||b.hasScreenshot){
+      var imgWrap=el('div','','<div class="cp-sub" style="margin-top:8px;">Loading screenshot...</div>');
+      card.appendChild(imgWrap);
+      if(b.screenshot){
+        imgWrap.innerHTML='';
+        var img=el('img',''); img.src=b.screenshot;
+        img.style.cssText='max-width:100%;border-radius:8px;margin-top:8px;max-height:220px;object-fit:contain;background:#F0EAD9;';
+        imgWrap.appendChild(img);
+      } else {
+        db.ref(branchRef('booking-screenshots/'+b.id)).once('value').then(function(snap){
+          var data=snap.val();
+          imgWrap.innerHTML='';
+          if(data){
+            var img=el('img',''); img.src=data;
+            img.style.cssText='max-width:100%;border-radius:8px;margin-top:8px;max-height:220px;object-fit:contain;background:#F0EAD9;';
+            imgWrap.appendChild(img);
+          } else { imgWrap.innerHTML='<div class="cp-sub" style="margin-top:8px;">Screenshot not available</div>'; }
+        }).catch(function(){ imgWrap.innerHTML=''; });
+      }
+    }
+    var statusTag = b.status==='approved' ? '<span class="cp-tag" style="color:var(--ok);background:#E6F2E8;">confirmed</span>'
+      : b.status==='rejected' ? '<span class="cp-tag" style="color:var(--danger);background:#FBEAEA;">rejected</span>'
+      : '<span class="cp-tag">awaiting approval</span>';
+    var statusRow=el('div',''); statusRow.style.marginTop='8px'; statusRow.innerHTML=statusTag;
+    card.appendChild(statusRow);
+
+    var canApprove = role==='admin' || (role==='staff' && state.settings.staffCanApproveBookings);
+    if(b.status==='pending' && canApprove){
+      var btns=el('div','cp-cardbtns');
+      var okBtn=el('button','cp-btn','Approve');
+      okBtn.onclick=function(){
+        var advHtml='<label class="cp-label">Advance received (PKR)</label><input class="cp-input" id="mBookAdv" type="number" min="0" value="'+(b.advanceAmount||0)+'">';
+        advHtml+='<label class="cp-label" style="margin-top:8px;">Payment mode</label><select class="cp-input" id="mBookAdvMode"><option value="cash">Cash</option><option value="online">Online / bank</option></select>';
+        showModal('Approve booking — '+b.name,advHtml,function(){
+          var adv=Math.max(0,parseFloat(document.getElementById('mBookAdv').value)||0);
+          var advMode=document.getElementById('mBookAdvMode').value;
+          b.advanceAmount=adv;
+          b.advanceMode=advMode;
+          b.status='approved'; b.notifRead=true;
+          saveBookings();
+          closeModal(); render();
+          window.open(waLink(b.phone,bookingWaMsg(b)),'_blank');
+        },'Approve & send WhatsApp');
+      };
+      var noBtn=el('button','cp-btn danger','Reject');
+      noBtn.onclick=function(){ b.status='rejected'; b.notifRead=true; saveBookings(); render(); };
+      btns.appendChild(okBtn); btns.appendChild(noBtn);
+      card.appendChild(btns);
+    } else if(b.status==='approved' && !b.consumed){
+      var allotBtns=el('div','cp-cardbtns');
+      var waBtn2=el('button','cp-btn brass','WhatsApp');
+      waBtn2.onclick=function(){
+        var msg=bookingWaMsg(b);
+        window.open(waLink(b.phone,msg),'_blank');
+      };
+      var startBtn=el('button','cp-btn','Start session');
+      startBtn.onclick=function(){ openAllotBooking(b.id); };
+      allotBtns.appendChild(waBtn2); allotBtns.appendChild(startBtn);
+      card.appendChild(allotBtns);
+    } else if(b.status==='approved' && b.consumed){
+      var linkedSt=state.stations.find(function(s){return s.id===b.linkedStationId;});
+      card.appendChild(el('div','cp-sub','Seated at '+(linkedSt?linkedSt.name:'a table')+' — advance adjusted at settle.'));
+    } else if(b.status==='pending' && !canApprove){
+      card.appendChild(el('div','cp-sub','Waiting for admin to review this request.'));
+    }
+    return card;
+  }
+
+  pending.forEach(function(b){ body.appendChild(bookingCard(b)); });
+  others.forEach(function(b){ body.appendChild(bookingCard(b)); });
+}
+
+var _modalOnCancel=null;
+function showModal(title,bodyHtml,onSave,saveLabel,onCancel){
+  _modalOnCancel=onCancel||null;
+  var ov=el('div','cp-overlay'); ov.id='cpOverlay';
+  var modal=el('div','cp-modal');
+  var head=el('div','cp-modal-head','<h3>'+title+'</h3>');
+  var x=el('button','cp-x','&times;'); x.onclick=closeModal;
+  head.appendChild(x);
+  modal.appendChild(head);
+  var b=el('div',''); b.innerHTML=bodyHtml; modal.appendChild(b);
+  var save=el('button','cp-btn',saveLabel||'Save'); save.style.width='100%'; save.style.marginTop='10px'; save.style.padding='11px';
+  save.onclick=function(){ _modalOnCancel=null; onSave(); };
+  modal.appendChild(save);
+  ov.appendChild(modal);
+  ov.onmousedown=function(e){ if(e.target===ov) closeModal(); };
+  document.getElementById('cpApp').appendChild(ov);
+}
+function closeModal(){ var ov=document.getElementById('cpOverlay'); if(ov) ov.remove(); if(_modalOnCancel){ var cb=_modalOnCancel; _modalOnCancel=null; cb(); } }
+
+/* --- Logout --- */
+document.getElementById('cpLogout').onclick=function(){
+  sessionStorage.removeItem('rsa-login');
+  document.getElementById('cpApp').style.display='none';
+  document.getElementById('cpLogin').style.display='';
+  document.getElementById('loginEmail').value='';
+  document.getElementById('loginPass').value='';
+  document.getElementById('loginErr').textContent='';
+};
+
+/* --- Desktop/Mobile view toggle --- */
+(function(){
+  var toggle=document.getElementById('cpViewToggle');
+  var app=document.getElementById('cpApp');
+  var stored=localStorage.getItem('rsa-viewmode');
+  if(stored==='desktop'){ app.classList.add('desktop-mode'); toggle.textContent='Mobile view'; }
+  toggle.onclick=function(){
+    var isDt=app.classList.toggle('desktop-mode');
+    toggle.textContent=isDt?'Mobile view':'Desktop view';
+    localStorage.setItem('rsa-viewmode',isDt?'desktop':'mobile');
+  };
+})();
+
+/* --- Login system (multi-branch) --- */
+function enterApp(){
+  document.getElementById('cpLogin').style.display='none';
+  document.getElementById('cpApp').style.display='';
+  updateBranchUI();
+  loadState();
+}
+function tryLogin(){
+  var email=(document.getElementById('loginEmail').value||'').trim().toLowerCase();
+  var pass=document.getElementById('loginPass').value||'';
+  var errEl=document.getElementById('loginErr');
+
+  /* Super Admin check (hardcoded) */
+  if(email===SUPER_ADMIN.email && pass===SUPER_ADMIN.pass){
+    role='admin'; currentBranch='gulshan';
+    sessionStorage.setItem('rsa-login',JSON.stringify({role:'admin',branch:'gulshan',super:true}));
+    enterApp(); return;
+  }
+
+  /* Check branch-specific credentials (hardcoded) */
+  for(var bi=0;bi<BRANCHES.length;bi++){
+    var br=BRANCHES[bi].id;
+    var cred=BRANCH_CREDS[br]||{};
+    if(email===(cred.adminEmail||'').toLowerCase() && pass===cred.adminPass){
+      role='admin'; currentBranch=br;
+      sessionStorage.setItem('rsa-login',JSON.stringify({role:'admin',branch:br}));
+      enterApp(); return;
+    }
+    if(email===(cred.staffEmail||'').toLowerCase() && pass===cred.staffPass){
+      role='staff'; currentBranch=br;
+      sessionStorage.setItem('rsa-login',JSON.stringify({role:'staff',branch:br}));
+      enterApp(); return;
+    }
+  }
+
+  /* Also check dynamic credentials from Firebase for each branch */
+  var checkBranch=function(idx){
+    if(idx>=BRANCHES.length){ errEl.textContent='Invalid email or password'; return; }
+    var br=BRANCHES[idx].id;
+    db.ref('branches/'+br+'/state/settings').once('value').then(function(snap){
+      var s=snap.val()||{};
+      var aEmail=(s.adminEmail||'').toLowerCase(), aPass=s.adminPass||'';
+      var sEmail=(s.staffEmail||'').toLowerCase(), sPass=s.staffPass||'';
+      if(email===aEmail && pass===aPass){
+        role='admin'; currentBranch=br;
+        sessionStorage.setItem('rsa-login',JSON.stringify({role:'admin',branch:br}));
+        enterApp();
+      } else if(email===sEmail && pass===sPass){
+        role='staff'; currentBranch=br;
+        sessionStorage.setItem('rsa-login',JSON.stringify({role:'staff',branch:br}));
+        enterApp();
+      } else { checkBranch(idx+1); }
+    }).catch(function(){ checkBranch(idx+1); });
+  };
+  checkBranch(0);
+}
+function updateBranchUI(){
+  var brand=document.querySelector('.cp-brand');
+  if(!brand) return;
+  var brName=BRANCHES.find(function(b){return b.id===currentBranch;});
+  brand.innerHTML='Royal <span>Snooker Academy</span>';
+  if(brName) brand.innerHTML+=' <span style="font-size:11px;color:var(--brass);margin-left:4px;">— '+brName.name+'</span>';
+  /* Super admin branch switcher */
+  var saved=null; try{ saved=JSON.parse(sessionStorage.getItem('rsa-login')); }catch(e){}
+  var existing=document.getElementById('branchSwitcher');
+  if(existing) existing.remove();
+  if(saved&&saved.super){
+    var sel=document.createElement('select');
+    sel.id='branchSwitcher';
+    sel.style.cssText='font-size:11px;font-weight:700;padding:5px 8px;border:1px solid var(--border);border-radius:8px;background:var(--bg);cursor:pointer;margin-left:6px;';
+    BRANCHES.forEach(function(b){
+      var opt=document.createElement('option'); opt.value=b.id; opt.textContent=b.name;
+      if(b.id===currentBranch) opt.selected=true;
+      sel.appendChild(opt);
+    });
+    sel.onchange=function(){
+      /* Detach old branch listeners */
+      db.ref(branchRef('bookings')).off();
+      /* Switch */
+      currentBranch=sel.value;
+      saved.branch=currentBranch;
+      sessionStorage.setItem('rsa-login',JSON.stringify(saved));
+      loadState();
+      updateBranchUI();
+    };
+    brand.parentElement.insertBefore(sel,brand.nextSibling);
+  }
+}
+document.getElementById('loginBtn').onclick=tryLogin;
+document.getElementById('loginPass').onkeydown=function(e){if(e.key==='Enter')tryLogin();};
+document.getElementById('loginEmail').onkeydown=function(e){if(e.key==='Enter')document.getElementById('loginPass').focus();};
+
+/* Check if already logged in this session */
+var savedLogin=null;
+try{ savedLogin=JSON.parse(sessionStorage.getItem('rsa-login')); }catch(e){}
+if(savedLogin){
+  role=savedLogin.role||savedLogin;
+  currentBranch=savedLogin.branch||'nazimabad';
+  enterApp();
+}
+})();
+
+</script>
+</body>
+</html>
+

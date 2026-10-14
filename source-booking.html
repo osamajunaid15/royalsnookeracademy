@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Royal Snooker Academy — Book a Table</title>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:wght@500;600&family=IBM+Plex+Mono:wght@500;600&family=Inter:wght@400;500;600&display=swap');
+:root{--felt:#0F3D2E;--felt-dark:#0A2C21;--wood:#7A4E2B;--cream:#F4EFE3;--brass:#B8892B;--brass-light:#D9AE5C;--ink:#1C1712;--ok:#3E7D4B;--danger:#A83232;}
+*{box-sizing:border-box;}
+body{margin:0;font-family:'Inter',sans-serif;background:var(--cream);color:var(--ink);display:flex;justify-content:center;padding:0;}
+.wrap{width:100%;max-width:460px;min-height:100vh;background:var(--cream);position:relative;overflow:hidden;}
+.bg-art{position:absolute;inset:0;z-index:0;opacity:.05;pointer-events:none;overflow:hidden;}
+.bg-art svg{position:absolute;top:120px;left:50%;transform:translateX(-50%) rotate(-8deg);width:360px;height:auto;}
+.head{background:var(--felt);color:var(--cream);padding:26px 20px 22px;position:relative;z-index:1;}
+.brand{font-family:'Fraunces',serif;font-size:22px;font-weight:600;}
+.brand span{color:var(--brass-light);}
+.tag{font-size:13px;color:#CFE3D8;margin-top:4px;}
+.body{padding:20px;position:relative;z-index:1;}
+.field{margin-bottom:14px;}
+.field label{display:block;font-size:12.5px;color:#6B6152;margin-bottom:5px;font-weight:500;}
+.field input,.field select,.field textarea{width:100%;padding:11px 12px;border:1px solid #DDD3BC;border-radius:9px;font-size:14px;background:#fff;color:var(--ink);font-family:inherit;}
+.field textarea{resize:vertical;min-height:60px;}
+.upload-box{border:2px dashed #C9BC9C;border-radius:10px;padding:16px;text-align:center;cursor:pointer;background:#FBF8F0;}
+.upload-box input{display:none;}
+.upload-box .hint{font-size:12px;color:#8A7A5C;margin-top:4px;}
+.preview{max-width:100%;border-radius:8px;margin-top:10px;display:none;}
+.btn{width:100%;background:var(--felt);color:var(--cream);border:none;padding:14px;border-radius:10px;font-size:15px;font-weight:600;cursor:pointer;margin-top:6px;}
+.btn:disabled{opacity:.5;cursor:not-allowed;}
+.note{font-size:12px;color:#8A7A5C;text-align:center;margin-top:10px;line-height:1.5;}
+.success{text-align:center;padding:40px 16px;position:relative;z-index:1;}
+.success .icon{width:56px;height:56px;border-radius:50%;background:var(--ok);color:#fff;display:flex;align-items:center;justify-content:center;font-size:28px;margin:0 auto 16px;}
+.success h2{font-family:'Fraunces',serif;font-size:19px;margin:0 0 8px;}
+.success p{font-size:14px;color:#6B6152;line-height:1.6;}
+.success .btn.ghost{background:transparent;color:var(--felt);border:1px solid var(--felt);margin-top:20px;}
+.err{color:var(--danger);font-size:12.5px;margin-top:-8px;margin-bottom:12px;display:none;}
+.avail-banner{background:var(--felt);color:var(--cream);border-radius:10px;padding:11px 13px;margin-bottom:8px;font-size:13px;}
+.avail-banner b{font-family:'IBM Plex Mono',monospace;font-size:17px;color:var(--brass-light);margin-right:6px;}
+.avail-strip{display:flex;gap:7px;overflow-x:auto;padding-bottom:2px;}
+.avail-chip{display:flex;align-items:center;gap:6px;font-size:11.5px;padding:5px 9px;border-radius:99px;white-space:nowrap;border:1px solid #E4DAC4;background:#fff;flex-shrink:0;}
+.avail-chip .dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;}
+.avail-chip.free{color:var(--ok);border-color:#CFE8D4;background:#F3FAF4;}
+.avail-chip.free .dot{background:var(--ok);}
+.avail-chip.busy{color:var(--danger);border-color:#F0D3D3;background:#FBF2F2;}
+.avail-chip.busy .dot{background:var(--danger);}
+.slot-hint{font-size:12px;color:#8A7A5C;margin-bottom:8px;}
+.slot-grid{display:flex;flex-wrap:wrap;gap:7px;max-height:220px;overflow-y:auto;padding:4px 2px;border:1px solid #E4DAC4;border-radius:10px;background:#fff;}
+.slot-chip{border:1px solid #DDD3BC;background:#FBF8F0;color:var(--ink);font-size:12px;padding:8px 4px;border-radius:8px;cursor:pointer;text-align:center;flex:1 1 22%;font-family:'IBM Plex Mono',monospace;}
+.slot-chip.selected{background:var(--felt);color:var(--cream);border-color:var(--felt);}
+.slot-chip.disabled{opacity:.32;text-decoration:line-through;cursor:not-allowed;background:#F0EAD9;}
+.slot-legend{display:flex;gap:14px;font-size:11px;color:#8A7A5C;margin-top:6px;}
+.slot-legend span{display:flex;align-items:center;gap:4px;}
+.slot-legend i{width:9px;height:9px;border-radius:3px;display:inline-block;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="bg-art" aria-hidden="true">
+    <svg viewBox="0 0 400 220" xmlns="http://www.w3.org/2000/svg">
+      <rect x="10" y="10" width="380" height="200" rx="14" fill="#0A2C21"/>
+      <rect x="26" y="26" width="348" height="168" rx="6" fill="none" stroke="#F4EFE3" stroke-width="2"/>
+      <circle cx="30" cy="30" r="12" fill="#0A2C21" stroke="#1C1712" stroke-width="3"/>
+      <circle cx="370" cy="30" r="12" fill="#0A2C21" stroke="#1C1712" stroke-width="3"/>
+      <circle cx="30" cy="190" r="12" fill="#0A2C21" stroke="#1C1712" stroke-width="3"/>
+      <circle cx="370" cy="190" r="12" fill="#0A2C21" stroke="#1C1712" stroke-width="3"/>
+      <circle cx="200" cy="14" r="10" fill="#0A2C21" stroke="#1C1712" stroke-width="3"/>
+      <circle cx="200" cy="206" r="10" fill="#0A2C21" stroke="#1C1712" stroke-width="3"/>
+      <circle cx="110" cy="90" r="9" fill="#F4EFE3"/>
+      <circle cx="150" cy="130" r="9" fill="#B8892B"/>
+      <circle cx="230" cy="75" r="9" fill="#A83232"/>
+      <circle cx="260" cy="140" r="9" fill="#1C1712"/>
+      <circle cx="190" cy="105" r="9" fill="#F4EFE3"/>
+      <line x1="60" y1="170" x2="180" y2="115" stroke="#7A4E2B" stroke-width="4" stroke-linecap="round"/>
+    </svg>
+  </div>
+
+  <div id="formView">
+    <div class="head">
+      <div class="brand">Royal <span>Snooker Academy</span></div>
+      <div class="tag">Book your table — snooker · 8-ball · PS5</div>
+    </div>
+    <div class="body">
+      <div id="liveAvail"></div>
+
+      <div class="field"><label>Full name</label><input id="bName" placeholder="Your name"></div>
+      <div class="field"><label>WhatsApp number</label><input id="bPhone" placeholder="03xx-xxxxxxx"></div>
+      <div class="field"><label>Table / arena</label>
+        <select id="bCategory">
+          <option value="">Loading tables...</option>
+        </select>
+      </div>
+      <div class="field"><label>Date</label><input id="bDate" type="date"></div>
+      <div class="field">
+        <label>Time slot (15-min)</label>
+        <div class="slot-hint">Grey/struck-through slots are unavailable — either too soon (less than 1 hour away) or already booked.</div>
+        <div class="slot-grid" id="slotGrid"><div class="slot-hint">Loading slots...</div></div>
+        <div class="slot-legend">
+          <span><i style="background:var(--felt);"></i> Selected</span>
+          <span><i style="background:#FBF8F0;border:1px solid #DDD3BC;"></i> Available</span>
+          <span><i style="background:#F0EAD9;"></i> Unavailable</span>
+        </div>
+      </div>
+      <div class="field"><label>Notes (optional)</label><textarea id="bNotes" placeholder="Number of players, special request..."></textarea></div>
+      <div class="field">
+        <label>Payment screenshot (optional)</label>
+        <label class="upload-box" id="uploadBox">
+          <span id="uploadLabel">Tap to attach screenshot</span>
+          <div class="hint">JPG or PNG, advance payment proof</div>
+          <input type="file" id="bFile" accept="image/*">
+        </label>
+        <img id="bPreview" class="preview">
+      </div>
+      <div class="err" id="bErr"></div>
+      <button class="btn" id="bSubmit" disabled>Select a time slot first</button>
+      <div class="note">Aapki booking receive hote hi admin verify karega. Approval ke baad aapko WhatsApp par confirmation message mil jayega.</div>
+    </div>
+  </div>
+
+  <div id="successView" style="display:none;">
+    <div class="success">
+      <div class="icon">&#10003;</div>
+      <h2>Booking request sent!</h2>
+      <p>Humein aapki request mil gayi hai. Payment verify hote hi aapko WhatsApp par booking confirmation bhej diya jayega.</p>
+      <button class="btn ghost" id="bAgain">Submit another booking</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  var cfgUrl='config.json?_='+Date.now();
+  try{
+    var x=new XMLHttpRequest();
+    x.open('GET',cfgUrl,false);
+    x.send();
+    if(x.status===200){
+      var c=JSON.parse(x.responseText);
+      if(c.active===false||(c.expiry&&new Date(c.expiry)<new Date())){
+        document.querySelector('.container').innerHTML='<div style="text-align:center;padding:60px 20px;"><div style="font-size:48px;margin-bottom:16px;">&#128274;</div><h2>Booking Closed</h2><p style="color:#888;">'+(c.message||'This demo has expired. Contact the developer.')+'</p></div>';
+        return;
+      }
+    }
+  }catch(e){}
+})();
+/* --- Firebase init --- */
+firebase.initializeApp({
+  apiKey:"AIzaSyAxkJ3bJKgswpz8ggmfa7Oetn99mSCXrT0",
+  authDomain:"royal-snooker-academy.firebaseapp.com",
+  databaseURL:"https://royal-snooker-academy-default-rtdb.firebaseio.com",
+  projectId:"royal-snooker-academy",
+  storageBucket:"royal-snooker-academy.firebasestorage.app",
+  messagingSenderId:"765677194573",
+  appId:"1:765677194573:web:55c739eec3daf785803b04"
+});
+var db=firebase.database();
+var STORE_KEY='sns-bookings-v1';
+var STATIONS_KEY='sns-stations-public';
+var SETTINGS_KEY='sns-settings-public';
+var LS_SETTINGS='rsa-settings-public';
+var LS_STATIONS='rsa-stations-public';
+/* Multi-branch: read ?branch= from URL, default to nazimabad */
+var bookingBranch=(function(){
+  var m=location.search.match(/[?&]branch=([^&]+)/);
+  return m?decodeURIComponent(m[1]):'nazimabad';
+})();
+function branchRef(path){ return 'branches/'+bookingBranch+'/'+path; }
+var SLOT_MINUTES=60; /* assumed session length, used only for slot-conflict checking */
+var fileData=null;
+var stationList=[];
+var selectedTime=null;
+var minBookingAdvance=0;
+var clubOpenTime='10:00';
+var clubCloseTime='23:00';
+var club24h=false;
+var todayStr=new Date().toISOString().slice(0,10);
+var firebaseOk=false;
+
+/* Auto-update date at midnight */
+(function scheduleMidnightUpdate(){
+  var now=new Date();
+  var midnight=new Date(now.getFullYear(),now.getMonth(),now.getDate()+1,0,0,1);
+  var ms=midnight-now;
+  setTimeout(function(){
+    todayStr=new Date().toISOString().slice(0,10);
+    var d=document.getElementById('bDate');
+    if(d){ d.min=todayStr; if(d.value<todayStr) d.value=todayStr; }
+    refreshSlots();
+    scheduleMidnightUpdate();
+  },ms);
+})();
+
+function lsGet(k){try{var d=localStorage.getItem(k);return d?JSON.parse(d):null;}catch(e){return null;}}
+function lsSet(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch(e){}}
+
+function showFbError(msg){
+  var bar=document.getElementById('fbErrBar');
+  if(!bar){
+    bar=document.createElement('div');
+    bar.id='fbErrBar';
+    bar.style.cssText='position:fixed;top:0;left:0;right:0;z-index:9999;background:#D8383D;color:#fff;padding:10px 14px;font-size:13px;font-weight:600;text-align:center;font-family:Inter,sans-serif;';
+    document.body.appendChild(bar);
+  }
+  bar.textContent='⚠ Firebase connection issue — '+msg;
+  bar.style.display='block';
+}
+
+async function loadSettings(){
+  try{
+    var snap=await db.ref(branchRef('settings-public')).once('value');
+    var s=snap.val()||{};
+    minBookingAdvance=s.minBookingAdvance||0;
+    clubOpenTime=s.clubOpenTime||'10:00';
+    clubCloseTime=s.clubCloseTime||'23:00';
+    club24h=!!s.club24h;
+    firebaseOk=true;
+    lsSet(LS_SETTINGS,s);
+  }catch(e){
+    firebaseOk=false;
+    var cached=lsGet(LS_SETTINGS)||{};
+    minBookingAdvance=cached.minBookingAdvance||0;
+    clubOpenTime=cached.clubOpenTime||'10:00';
+    clubCloseTime=cached.clubCloseTime||'23:00';
+    club24h=!!cached.club24h;
+    showFbError('Settings load nahi ho sakeen. Firebase Console mein Rules check karein.');
+  }
+}
+
+function pad(n){ return n<10?'0'+n:''+n; }
+function to12(t){
+  var p=t.split(':'), h=+p[0], m=p[1];
+  var ap=h>=12?'PM':'AM', h12=h%12; if(h12===0) h12=12;
+  return h12+':'+m+' '+ap;
+}
+function slotList(){
+  var out=[];
+  var openH=10, openM=0, closeH=23, closeM=0;
+  if(club24h){ openH=0; openM=0; closeH=23; closeM=45; }
+  else {
+    var op=(clubOpenTime||'10:00').split(':'); openH=+op[0]; openM=+op[1]||0;
+    var cl=(clubCloseTime||'23:00').split(':'); closeH=+cl[0]; closeM=+cl[1]||0;
+  }
+  for(var h=0;h<=23;h++){
+    for(var m=0;m<60;m+=15){
+      var t=h*60+m, start=openH*60+openM, end=closeH*60+closeM;
+      if(t>=start && t<=end) out.push(pad(h)+':'+pad(m));
+    }
+  }
+  return out;
+}
+
+async function loadStations(){
+  try{
+    var snap=await db.ref(branchRef('stations-public')).once('value');
+    stationList=snap.val()||[];
+    if(stationList.length) lsSet(LS_STATIONS,stationList);
+  }catch(e){
+    stationList=lsGet(LS_STATIONS)||[];
+  }
+  var sel=document.getElementById('bCategory');
+  sel.innerHTML='';
+  if(stationList.length){
+    stationList.forEach(function(s){
+      var o=document.createElement('option');
+      o.value=s.id; o.textContent=s.name+' ('+s.category+')';
+      sel.appendChild(o);
+    });
+    var anyOpt=document.createElement('option');
+    anyOpt.value=''; anyOpt.textContent='Any available table';
+    sel.appendChild(anyOpt);
+  } else {
+    ['Snooker','8-Ball Pool','PS5','Any available'].forEach(function(c){
+      var o=document.createElement('option'); o.value=''; o.textContent=c; sel.appendChild(o);
+    });
+  }
+}
+
+async function loadLiveAvailability(){
+  var box=document.getElementById('liveAvail');
+  try{
+    var snap=await db.ref(branchRef('stations-public')).once('value');
+    var list=snap.val()||[];
+    if(!list.length){ box.innerHTML=''; return; }
+    var free=list.filter(function(s){ return s.status==='idle'; }).length;
+    var html='<div class="avail-banner"><b>'+free+' of '+list.length+'</b> tables free right now</div><div class="avail-strip">';
+    list.forEach(function(s){
+      var isFree=s.status==='idle';
+      html+='<div class="avail-chip '+(isFree?'free':'busy')+'"><span class="dot"></span>'+s.name+(isFree?' — free':' — busy')+'</div>';
+    });
+    html+='</div>';
+    box.innerHTML=html;
+  }catch(e){ box.innerHTML=''; }
+}
+
+function updateSubmitState(){
+  var btn=document.getElementById('bSubmit');
+  if(!selectedTime){ btn.disabled=true; btn.textContent='Select a time slot first'; }
+  else { btn.disabled=false; btn.textContent='Submit booking request'; }
+}
+
+async function refreshSlots(){
+  var dateStr=document.getElementById('bDate').value || todayStr;
+  var tableId=document.getElementById('bCategory').value;
+  var grid=document.getElementById('slotGrid');
+  grid.innerHTML='<div class="slot-hint">Loading slots...</div>';
+  selectedTime=null;
+  updateSubmitState();
+
+  var existing=[];
+  try{
+    var snap=await db.ref(branchRef('bookings')).once('value');
+    existing=snap.val()||[];
+  }catch(e){ existing=[]; }
+
+  grid.innerHTML='';
+  slotList().forEach(function(t){
+    var dt=new Date(dateStr+'T'+t);
+    var tooSoon = dt.getTime() < (Date.now()+60*60*1000);
+    var conflict=false;
+    if(!tooSoon && tableId){
+      var newStart=dt.getTime(), newEnd=newStart+SLOT_MINUTES*60000;
+      conflict=existing.some(function(b){
+        if(b.tableId!==tableId) return false;
+        if(b.status==='rejected') return false;
+        if(!b.date || !b.time) return false;
+        var exStart=new Date(b.date+'T'+b.time).getTime(), exEnd=exStart+SLOT_MINUTES*60000;
+        return newStart<exEnd && exStart<newEnd;
+      });
+    }
+    var disabled = tooSoon || conflict;
+    var chip=document.createElement('button');
+    chip.type='button';
+    chip.className='slot-chip'+(disabled?' disabled':'');
+    chip.textContent=to12(t);
+    if(disabled){
+      chip.disabled=true;
+      chip.title = conflict ? 'Already booked' : 'Too soon — book at least 1 hour ahead';
+    } else {
+      chip.onclick=function(){
+        document.querySelectorAll('.slot-chip.selected').forEach(function(c){ c.classList.remove('selected'); });
+        chip.classList.add('selected');
+        selectedTime=t;
+        updateSubmitState();
+      };
+    }
+    grid.appendChild(chip);
+  });
+}
+
+(async function init(){
+  /* Show branch name in header */
+  var branchNames={gulshan:'Gulshan',nazimabad:'Nazimabad'};
+  var bTag=document.querySelector('.tag');
+  if(bTag && branchNames[bookingBranch]) bTag.textContent=branchNames[bookingBranch]+' — Book your table';
+  document.getElementById('bDate').min=todayStr;
+  document.getElementById('bDate').value=todayStr;
+  await loadSettings();
+  await loadStations();
+  await loadLiveAvailability();
+  await refreshSlots();
+  db.ref(branchRef('stations-public')).on('value',function(){ loadLiveAvailability(); });
+  db.ref(branchRef('settings-public')).on('value',function(snap){
+    try{
+      var s=snap.val()||{};
+      minBookingAdvance=s.minBookingAdvance||0;
+      clubOpenTime=s.clubOpenTime||'10:00';
+      clubCloseTime=s.clubCloseTime||'23:00';
+      club24h=!!s.club24h;
+      firebaseOk=true;
+      lsSet(LS_SETTINGS,s);
+      refreshSlots();
+      var bar=document.getElementById('fbErrBar');
+      if(bar) bar.style.display='none';
+    }catch(e){}
+  });
+})();
+
+document.getElementById('bDate').addEventListener('change',refreshSlots);
+document.getElementById('bCategory').addEventListener('change',refreshSlots);
+
+document.getElementById('uploadBox').addEventListener('click',function(e){
+  if(e.target.tagName!=='INPUT') document.getElementById('bFile').click();
+});
+document.getElementById('bFile').addEventListener('change',function(e){
+  var f=e.target.files[0];
+  if(!f) return;
+  var reader=new FileReader();
+  reader.onload=function(ev){
+    fileData=ev.target.result;
+    document.getElementById('bPreview').src=fileData;
+    document.getElementById('bPreview').style.display='block';
+    document.getElementById('uploadLabel').textContent='Screenshot attached ✓';
+  };
+  reader.readAsDataURL(f);
+});
+
+document.getElementById('bSubmit').addEventListener('click',async function(){
+  var name=document.getElementById('bName').value.trim();
+  var phone=document.getElementById('bPhone').value.trim();
+  var dateStr=document.getElementById('bDate').value;
+  var advanceAmount=0; /* Advance is now entered by admin/staff in POS only */
+  var tableSel=document.getElementById('bCategory');
+  var tableId=tableSel.value;
+  var tableLabel=tableSel.options[tableSel.selectedIndex]?tableSel.options[tableSel.selectedIndex].textContent:'';
+  var err=document.getElementById('bErr');
+
+  if(!name || !phone || !dateStr || !selectedTime){
+    err.textContent='Please fill your name, WhatsApp number, date, and select a time slot.';
+    err.style.display='block'; return;
+  }
+  err.style.display='none';
+
+  var btn=this; btn.disabled=true; btn.textContent='Sending...';
+
+  var existing=[];
+  try{
+    var snap=await db.ref(branchRef('bookings')).once('value');
+    existing=snap.val()||[];
+  }catch(e){ existing=[]; }
+
+  var bookingId='bk'+Date.now();
+  var booking={
+    id:bookingId,
+    name:name, phone:phone,
+    tableId:tableId, category:tableLabel,
+    date:dateStr, time:selectedTime,
+    notes:document.getElementById('bNotes').value.trim(),
+    advanceAmount:advanceAmount,
+    hasScreenshot:!!fileData,
+    status:'pending',
+    notifRead:false,
+    consumed:false,
+    createdAt:Date.now()
+  };
+
+  try{
+    existing.push(booking);
+    await db.ref(branchRef('bookings')).set(existing);
+    if(fileData){
+      try{ await db.ref(branchRef('booking-screenshots/'+bookingId)).set(fileData); }catch(e2){}
+    }
+    document.getElementById('formView').style.display='none';
+    document.getElementById('successView').style.display='block';
+  }catch(e){
+    btn.disabled=false; btn.textContent='Submit booking request';
+    alert('Something went wrong, please try again.');
+  }
+});
+
+document.getElementById('bAgain').addEventListener('click',async function(){
+  document.getElementById('bName').value='';
+  document.getElementById('bPhone').value='';
+  document.getElementById('bDate').value=todayStr;
+  document.getElementById('bNotes').value='';
+  document.getElementById('bFile').value='';
+  document.getElementById('bPreview').style.display='none';
+  document.getElementById('uploadLabel').textContent='Tap to attach screenshot';
+  fileData=null;
+  await loadSettings();
+  await loadStations();
+  await loadLiveAvailability();
+  await refreshSlots();
+  document.getElementById('successView').style.display='none';
+  document.getElementById('formView').style.display='block';
+});
+</script>
+</body>
+</html>
